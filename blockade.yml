@@ -1,0 +1,26 @@
+containers:
+  c1:
+    image: cassandra:2.2.3
+
+  c2:
+    image: cassandra:2.2.3
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  c3:
+    image: cassandra:2.2.3
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  c4:
+    image: cassandra:2.2.3
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+# vim: set et sw=2 sts=2:
