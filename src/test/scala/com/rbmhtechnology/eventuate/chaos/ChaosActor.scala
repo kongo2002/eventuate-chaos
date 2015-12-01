@@ -51,6 +51,7 @@ object ChaosActor extends App with ChaosCommands {
 
     StdIn.readLine()
     system.stop(actor)
+    system.terminate
   }
 
   sys.env.get("CASSANDRA_NODES") match {
