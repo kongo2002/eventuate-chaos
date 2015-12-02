@@ -141,10 +141,29 @@ You may also restart one or multiple nodes and inspect the effect on the [eventu
 
     $ sudo blockade restart c2 c4
 
+#### Inspect test application output
+
+While playing with the conditions of the test cluster you can see the eventuate application output its current state on
+stdout:
+
+```
+state = 65 (recovery = false)
+state = 66 (recovery = false)
+persist failure 696: Not enough replica available for query at consistency QUORUM (2 required but only 1 alive)
+persist failure 697: Not enough replica available for query at consistency QUORUM (2 required but only 1 alive)
+state = 67 (recovery = false)
+...
+state = 74 (recovery = false)
+state = 75 (recovery = false)
+persist failure 698: Cassandra timeout during write query at consistency QUORUM (2 replica were required but only 1 acknowledged the write)
+state = 76 (recovery = false)
+state = 77 (recovery = false)
+```
+
 ### Example configuration
 
 The examplary `blockade.yml` consists of 4 cassandra nodes (`c1` being the initial seed node) and one
-[eventuate][eventuate] [ChaosActor](./blob/master/src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala).
+[eventuate][eventuate] [ChaosActor](./src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala).
 You can find further information on the [blockade github page][blockade] regarding its configuration and the
 possibilities you have in addition to what is mentioned in here already.
 
