@@ -52,7 +52,7 @@ These steps only have to be taken once for the initial bootstrapping.
 ##### Initial setup
 
 As [docker][docker] does not run natively on Mac OS you have to use an existing *docker machine* setup and follow the
-steps under [Linux](#Linux) or use the pre-configured [Vagrant][vagrant] image that ships with this repository. If you
+steps under [Linux](#linux) or use the pre-configured [Vagrant][vagrant] image that ships with this repository. If you
 choose the latter you just have to build the image by running `vagrant up` and ssh into your new machine:
 
 ```bash
