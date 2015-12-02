@@ -9,13 +9,11 @@ and introducing network failures as partitions, packet loss and slow connections
 Prerequisites
 -------------
 
-### Installed Software
-
 #### Linux
 
 - [docker][docker] (tested with docker >= 1.6)
-- [blockade][blockade]
-- [sbt](http://www.scala-sbt.org/download.html) 0.13.x or higher
+- [blockade][blockade] (currently a fork of the original [dcm-oss/blockade](https://github.com/dcm-oss/blockade))
+- [sbt](http://www.scala-sbt.org/download.html) (0.13.x or higher)
 
 ##### Initial setup
 
@@ -97,7 +95,7 @@ chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL
 
 From now on you may introduce any kind of failure the [blockade][blockade] tool supports. This is my personal preference
 but I like to inspect the current [eventuate][eventuate] node's status in a [tmux](https://tmux.github.io/) split window
-while I modify the cluster's condition with `tmux split-window docker logs -f chaos`.
+while I modify the cluster's condition with `tmux split-window "docker logs -f chaos"`.
 
 ##### partition one cassandra node
 
