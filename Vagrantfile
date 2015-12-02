@@ -26,6 +26,11 @@ fi
 cd /blockade
 python setup.py develop
 
+# pull required docker images
+docker pull cassandra:2.2.3
+docker pull tonistiigi/dnsdock
+
+docker build -t uhlenheuer/sbt /vagrant
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
