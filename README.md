@@ -210,6 +210,44 @@ containers:
       CASSANDRA_NODES: "c1.cassandra.docker,c2.cassandra.docker,c3.cassandra.docker,c4.cassandra.docker"
 ```
 
+Auxiliary notes
+-----------------
+
+Below you can find some random remarks on problems or issues you may run into while chaos testing with the
+aforementioned methods and tools.
+
+
+#### DNS docker image
+
+As mentioned before we are using the docker image `tonistiigi/dnsdock` in order to establish a lightweight DNS service
+among the docker containers. This is especially useful when containers are referencing each other in a fashion that
+would form a circular dependency of [docker links](http://docs.docker.com/engine/userguide/networking/dockernetworks/).
+
+You may even integrate this DNS docker service into your host's DNS so that you can reference your containers by name.
+Usually you just have to add the docker interface's IP to your `/etc/resolv.conf` for that to work.
+
+This docker container can be started with the `start-dns.sh` script and is reachable under the name `dnsdock`. This
+means you can observe its current status via
+
+    $ docker logs dnsdock
+
+
+#### Initial startup time
+
+In case your are using cassandra version `> 2.1` (i.e. `2.2.3` like our example) you have to delay the startup of the
+cassandra nodes so that the node topology has enough time to settle in. You may alternatively test with an older version
+like `2.1.6` and get rid of those `start_delay` values in your `blockade.yml` resulting in much faster startup times. If
+that makes sense depends completely on what you intend to test.
+
+
+#### Interaction with docker commands
+
+While you are using [blockade][blockade] as your 'manager' of your test cluster you are completely free to use other
+docker containers in a normal docker-fashion like you are used to. However you **should not** `start`/`stop`/`restart`
+containers of your blockade cluster using the usual `docker <cmd>` commands. As [blockade][blockade] has to keep track
+of the network devices each container is associated with you should use the respective blockade commands like `blockade
+start`, `blockade stop`, `blockade restart`, `blockade up` and `blockade destroy` instead.
+
 
 [docker]: https://www.docker.com/
 [blockade]: https://github.com/kongo2002/blockade
