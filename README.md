@@ -200,6 +200,9 @@ containers:
     image: uhlenheuer/sbt
     command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
     volumes:
+      # this directory is configured to match up with the pre-configured
+      # Vagrantfile - you may have to adjust this one to line up with your
+      # eventuate test application directory
       "/vagrant": "/app"
     links:
       c1: "c1"
