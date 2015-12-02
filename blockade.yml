@@ -4,6 +4,7 @@ containers:
 
   c2:
     image: cassandra:2.2.3
+    start_delay: 60
     links:
       c1: "c1"
     environment:
@@ -11,6 +12,7 @@ containers:
 
   c3:
     image: cassandra:2.2.3
+    start_delay: 60
     links:
       c1: "c1"
     environment:
@@ -18,9 +20,20 @@ containers:
 
   c4:
     image: cassandra:2.2.3
+    start_delay: 60
     links:
       c1: "c1"
     environment:
       CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  chaos:
+    image: uhlenheuer/sbt
+    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
+    volumes:
+      "/vagrant": "/app"
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_NODES: "c1.cassandra.docker,c2.cassandra.docker,c3.cassandra.docker,c4.cassandra.docker"
 
 # vim: set et sw=2 sts=2:

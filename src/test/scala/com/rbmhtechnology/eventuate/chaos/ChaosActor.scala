@@ -16,14 +16,13 @@
 
 package com.rbmhtechnology.eventuate.chaos
 
-import java.net.InetAddress
-
 import akka.actor._
 
 import com.rbmhtechnology.eventuate._
 import com.rbmhtechnology.eventuate.log.cassandra._
 import com.typesafe.config.ConfigFactory
 
+import scala.concurrent.Await
 import scala.io.StdIn
 import scala.util._
 import scala.concurrent.duration._
@@ -38,7 +37,7 @@ object ChaosActor extends App with ChaosCommands {
        |akka.test.single-expect-default = 10s
        |akka.loglevel = "ERROR"
        |
-       |eventuate.log.cassandra.contact-points = ["${seeds.map(quote).mkString(",")}"]
+       |eventuate.log.cassandra.contact-points = [${seeds.map(quote).mkString(",")}]
        |eventuate.log.cassandra.replication-factor = 3
      """.stripMargin)
 
@@ -49,9 +48,14 @@ object ChaosActor extends App with ChaosCommands {
     val log = system.actorOf(CassandraEventLog.props("chaos"))
     val actor = system.actorOf(Props(new ChaosActor(log)))
 
-    StdIn.readLine()
-    system.stop(actor)
-    system.terminate
+    // -d = daemon mode that does not listen on stdin (i.e. docker instances)
+    if (args.contains("-d")) {
+      Await.result(system.whenTerminated, Duration.Inf)
+    } else {
+      StdIn.readLine()
+      system.stop(actor)
+      system.terminate
+    }
   }
 
   sys.env.get("CASSANDRA_NODES") match {

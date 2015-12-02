@@ -1,5 +1,7 @@
 FROM java:8
+MAINTAINER Gregor Uhlenheuer <kongo2002@gmail.com>
 
+# get scala + sbt
 RUN wget -nv "http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.deb" && \
     dpkg -i scala-2.11.7.deb && \
     apt-get update && \
@@ -14,6 +16,8 @@ RUN wget -nv "http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.deb" && \
     \
     sbt version
 
+# load applications from the /app folder
+# to be used like: 'docker run -v $(pwd):/app ...'
 VOLUME "/app"
 WORKDIR "/app"
 
