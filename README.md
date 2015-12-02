@@ -1,121 +1,195 @@
 Eventuate chaos testing utilities
 =================================
 
-This is very early work in progress on chaos testing utilities for [Eventuate](https://github.com/RBMHTechnology/eventuate) and [Apache Cassandra](http://cassandra.apache.org/). They support running Cassandra clusters and Eventuate applications on a single Mac OS X machine with [Docker](https://www.docker.com/) and generate failures by randomly stopping and restarting containers.
+This is very early work in progress on chaos testing utilities for [Eventuate][eventuate] and [Apache
+Cassandra](http://cassandra.apache.org/). They support running Cassandra clusters and Eventuate applications with
+[Docker][docker] and using [blockade][blockade] to easily generate failures like stopping and restarting of containers
+and introducing network failures as partitions, packet loss and slow connections.
 
 Prerequisites
 -------------
 
 ### Installed Software
 
-- [boot2docker](http://boot2docker.io/) 1.6.2 or higher
+#### Linux
+
+- [docker][docker] (tested with docker >= 1.6)
+- [blockade][blockade]
 - [sbt](http://www.scala-sbt.org/download.html) 0.13.x or higher
 
-### Started boot2docker VM
+##### Initial setup
 
-    almdudler:eventuate-chaos martin$ boot2docker start
-    Waiting for VM and Docker daemon to start...
-    ..........ooooooooo
-    Started.
+Given your [docker][docker] daemon is running and you have [blockade][blockade] in your `$PATH` you are basically ready
+to go. All you have to do once is to pull or build the necessary [docker][docker] containers the test cluster is based
+on:
 
-### Custom route
+``` bash
+# cassandra image
+$ docker pull cassandra:2.2.3
 
-By default, docker containers, running in the boot2docker VM, are not directly accessible from Mac OS. To make them accessible, packets targeted at docker container IP addresses must be routed to the boot2docker VM. Assuming that Docker containers have IP addresses `172.17.x.x`, a route to the boot2docker VM is added with: 
+# sbt + scala + java8 base image
+$ docker build -t uhlenheuer/sbt .
+```
 
-    almdudler:eventuate-chaos martin$ sudo route -n add 172.17.0.0/16 `boot2docker ip`
-    add net 172.17.0.0: gateway 192.168.59.103
+After that is done you can start the minimal docker DNS container that is used to identify the containers with each
+other:
+
+    $ ./start-dns.sh
+
+This script will look for the default `docker0` network interface and start a `dnsdock` image on port 53 for DNS
+discovery. You may have to specify the location to your *docker socket* via `$DOCKER_SOCKET` in case the script does not
+find it by itself:
+
+    $ DOCKER_SOCKET=/var/run/docker.sock ./start-dns.sh
+
+These steps only have to be taken once for the initial bootstrapping.
+
+#### Mac OS
+
+- [Vagrant][vagrant] (tested with 1.7.4)
+- [VirtualBox](https://www.virtualbox.org/)
+
+##### Initial setup
+
+As [docker][docker] does not run natively on Mac OS you have to use an existing *docker machine* setup and follow the
+steps under [Linux](#Linux) or use the pre-configured [Vagrant][vagrant] image that ships with this repository. If you
+choose the latter you just have to build the image by running `vagrant up` and ssh into your new machine:
+
+```bash
+$ vagrant up
+$ vagrant ssh
+
+# inside your virtual machine you can find the repository contents
+# mounted under /vagrant as usual
+cd /vagrant
+```
 
 Running a Cassandra cluster
 ---------------------------
 
-### Manual failure generation
+### blockade chaos cluster
 
-One way of running a local Cassandra cluster is using the scripts `cluster-start.sh` and `cluster-stop.sh`. These scripts and other `docker` commands below require a shell to be initialized with: 
+Now that you have all prerequisites fulfilled you can start up the [blockade][blockade] test cluster as it is configured
+in the `blockade.yml` shipped with this repository. From this point on you may freely experiment and modify all given
+parameters and configurations as this is just a toolkit to get you started as quickly as possible.
 
-    almdudler:eventuate-chaos martin$ eval `boot2docker shellinit`
-  
-For starting a Cassandra cluster with four nodes, for example, run:
+> Note that all blockade commands require root permissions.
 
-    almdudler:eventuate-chaos martin$ ./cluster-start.sh 4
-    cassandra-1
-    cassandra-2
-    cassandra-3
-    cassandra-4
-
-Running the command for the first time downloads all required Docker images which may take a while. If no argument is given, three nodes are started by default. The script prints the names of the started containers (`cassandra-<i>`) each containing a cluster node. For stopping node three, for example, run: 
-
-    almdudler:eventuate-chaos martin$ docker stop cassandra-3
-    cassandra-3
-
-For sending node three a `SIGKILL` instead, run:
-
-    almdudler:eventuate-chaos martin$ docker kill cassandra-3
-    cassandra-3
-
-For starting that node again, run:
-
-    almdudler:eventuate-chaos martin$ docker start cassandra-3
-    cassandra-3
-
-For stopping the whole cluster and removing all containers, run: 
- 
-    almdudler:eventuate-chaos martin$ ./cluster-stop.sh 
-    cassandra-1
-    cassandra-2
-    cassandra-3
-    cassandra-4
-
-### Random failure generation
-
-For running a cluster with random node failures, start the [`ChaosCluster`](https://github.com/RBMHTechnology/eventuate-chaos/blob/master/src/main/scala/com/rbmhtechnology/eventuate/chaos/ChaosCluster.scala) application with sbt:
-
-    almdudler:eventuate-chaos martin$ sbt
-    [info] Loading global plugins from /Users/martin/.sbt/0.13/plugins
-    [info] Loading project definition from /Users/martin/eventuate-chaos/project
-    [info] Set current project to eventuate-chaos (in build file:/Users/martin/eventuate-chaos/)
-    > runMain com.rbmhtechnology.eventuate.chaos.ChaosCluster
-    [info] Running com.rbmhtechnology.eventuate.chaos.ChaosCluster 
-    Writing /Users/martin/.boot2docker/certs/boot2docker-vm/ca.pem
-    Writing /Users/martin/.boot2docker/certs/boot2docker-vm/cert.pem
-    Writing /Users/martin/.boot2docker/certs/boot2docker-vm/key.pem
-    cassandra-1
-    cassandra-2
-    cassandra-3
-    cassandra-4
-    Cluster started. Press any key to start chaos ...
-
-By default, a four node cluster is started (see also [reference.conf](https://github.com/RBMHTechnology/eventuate-chaos/blob/master/src/main/resources/reference.conf) for further details). Pressing any key, after the cluster started, generates chaos by randomly stopping and (re)starting nodes, except the seed node (`cassandra-1`): 
-
-    cassandra-4
-    cassandra-2
-    Node(s) stopped. Press any key to stop cluster ...
-    cassandra-4
-    cassandra-2
-    Node(s) started. Press any key to stop cluster ...
-    cassandra-3
-    Node(s) stopped. Press any key to stop cluster ...
-    cassandra-3
-    Node(s) started. Press any key to stop cluster ...
-
-Pressing any key a second time stops the cluster and removes all containers:
-
-    cassandra-1
-    cassandra-2
-    cassandra-3
-    cassandra-4
-    Cluster stopped
-    [success] Total time: 77 s, completed 11.07.2015 17:12:22
-
-Obtaining the seed node address
--------------------------------
-
-From the command line, the IP address of the cluster seed node (`cassandra-1`) can be obtained with: 
-
-    almdudler:eventuate-chaos martin$ docker inspect --format='{{ .NetworkSettings.IPAddress }}' cassandra-1
-    172.17.0.1
-
-In Scala applications, the `seedAddress` method of the [`ChaosCommands`](https://github.com/RBMHTechnology/eventuate-chaos/blob/master/src/main/scala/com/rbmhtechnology/eventuate/chaos/ChaosCommands.scala) trait can be used to obtain the `InetAddress` of the seed node: 
-
-```scala
-def seedAddress(): Try[InetAddress]
+```bash
+$ sudo blockade up
 ```
+
+Depending on the cassandra version (> 2.1) you have to configure a reasonable startup delay for every cassandra node
+(i.e. 60 seconds). This may increase the initial startup time a lot. Once all nodes are up and running you can inspect
+your running cluster via `blockade status`:
+
+```bash
+$ sudo blockade status
+NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
+c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL
+c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL
+c3              4b630db6a19e    UP      172.17.0.4      NORMAL
+c4              928f68f3754c    UP      172.17.0.7      NORMAL
+chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL
+```
+
+### failures
+
+From now on you may introduce any kind of failure the [blockade][blockade] tool supports. This is my personal preference
+but I like to inspect the current [eventuate][eventuate] node's status in a [tmux](https://tmux.github.io/) split window
+while I modify the cluster's condition with `tmux split-window docker logs -f chaos`.
+
+##### partition one cassandra node
+
+``` bash
+$ sudo blockade partition c2
+NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
+c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     2
+c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     1
+c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
+c4              928f68f3754c    UP      172.17.0.7      NORMAL     2
+chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL     2
+```
+
+##### partition two cassandra nodes on its own
+
+``` bash
+$ sudo blockade partition c1 c3
+NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
+c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     1
+c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     3
+c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
+c4              928f68f3754c    UP      172.17.0.7      NORMAL     3
+chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL     3
+```
+
+##### flaky network connection of the eventuate node
+
+``` bash
+$ sudo blockade flaky chaos
+NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
+c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     1
+c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     3
+c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
+c4              928f68f3754c    UP      172.17.0.7      NORMAL     3
+chaos           bb8c89f615ef    UP      172.17.0.6      FLAKY      3
+```
+
+##### restart of nodes
+
+You may also restart one or multiple nodes and inspect the effect on the [eventuate][eventuate] application as well:
+
+    $ sudo blockade restart c2 c4
+
+### Example configuration
+
+The examplary `blockade.yml` consists of 4 cassandra nodes (`c1` being the initial seed node) and one
+[eventuate][eventuate] [ChaosActor](./blob/master/src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala).
+You can find further information on the [blockade github page][blockade] regarding its configuration and the
+possibilities you have in addition to what is mentioned in here already.
+
+``` yaml
+containers:
+  c1:
+    image: cassandra:2.2.3
+
+  c2:
+    image: cassandra:2.2.3
+    start_delay: 60
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  c3:
+    image: cassandra:2.2.3
+    start_delay: 60
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  c4:
+    image: cassandra:2.2.3
+    start_delay: 60
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  chaos:
+    image: uhlenheuer/sbt
+    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
+    volumes:
+      "/vagrant": "/app"
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_NODES: "c1.cassandra.docker,c2.cassandra.docker,c3.cassandra.docker,c4.cassandra.docker"
+```
+
+
+[docker]: https://www.docker.com/
+[blockade]: https://github.com/kongo2002/blockade
+[vagrant]: https://www.vagrantup.com/
+[eventuate]: https://github.com/RBMHTechnology/eventuate
