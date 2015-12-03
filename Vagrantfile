@@ -31,6 +31,9 @@ docker pull cassandra:2.2.3
 docker pull tonistiigi/dnsdock
 
 docker build -t uhlenheuer/sbt /vagrant
+
+# start dns if necessary
+/vagrant/start-dns.sh -f
 SCRIPT
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

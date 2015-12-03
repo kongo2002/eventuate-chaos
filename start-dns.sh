@@ -17,7 +17,13 @@ if [ ! -S "$DOCKER_SOCKET" ]; then
 fi
 
 # update resolv.conf if necessary
-grep "$DOCKER_IFACE" /etc/resolv.conf >/dev/null || echo "you may want to add 'nameserver $DOCKER_IFACE' to your resolv.conf"
+if ! grep "$DOCKER_IFACE" /etc/resolv.conf >/dev/null; then
+    if [ "$1" = "-f" ]; then
+        sed -i "1i nameserver $DOCKER_IFACE" /etc/resolv.conf
+    else
+        echo "you may want to add 'nameserver $DOCKER_IFACE' to your resolv.conf"
+    fi
+fi
 
 if ! docker top dnsdock >/dev/null 2>/dev/null; then
     echo "dnsdock not running yet"
