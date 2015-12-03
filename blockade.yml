@@ -31,6 +31,8 @@ containers:
     command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
     volumes:
       "${PWD}": "/app"
+    ports:
+      8080: 8080
     links:
       c1: "c1"
     environment:

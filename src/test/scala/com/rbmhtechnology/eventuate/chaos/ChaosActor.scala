@@ -19,6 +19,7 @@ package com.rbmhtechnology.eventuate.chaos
 import akka.actor._
 
 import com.rbmhtechnology.eventuate._
+import com.rbmhtechnology.eventuate.chaos.ChaosInterface.HealthCheckResult
 import com.rbmhtechnology.eventuate.log.cassandra._
 import com.typesafe.config.ConfigFactory
 
@@ -48,11 +49,14 @@ object ChaosActor extends App with ChaosCommands {
     val log = system.actorOf(CassandraEventLog.props("chaos"))
     val actor = system.actorOf(Props(new ChaosActor(log)))
 
+    val interface = system.actorOf(Props(new ChaosInterface(actor)))
+
     // -d = daemon mode that does not listen on stdin (i.e. docker instances)
     if (args.contains("-d")) {
       Await.result(system.whenTerminated, Duration.Inf)
     } else {
       StdIn.readLine()
+      system.stop(interface)
       system.stop(actor)
       system.terminate
     }
@@ -88,6 +92,15 @@ class ChaosActor(val eventLog: ActorRef) extends EventsourcedActor {
         println(s"persist failure $failures: ${e.getMessage}")
         scheduleCommand()
     }
+
+    case cmd: ChaosInterface.HealthCheck =>
+      val chaosInterface = sender
+      persist(cmd) {
+        case Success(command) =>
+          chaosInterface ! HealthCheckResult(state, command.requester)
+        case Failure(e) =>
+          println(s"health check persist failed: ${e.getMessage}")
+      }
   }
 
   override def onEvent: Receive = {
