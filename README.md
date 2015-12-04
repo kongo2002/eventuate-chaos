@@ -251,7 +251,7 @@ the cassandra cluster has settled to a stable condition (i.e. reconnect timeouts
 
 Consequently we expect the application to be able to persist any event while any or no cassandra node is partitioned from
 the test application container. You may inspect the state of the application with `docker logs -f chaos` like mentioned
-above or trigger a health check persist via the `./check-health.py` python script:
+above or trigger a health check via the `./check-health.py` python script:
 
 ``` bash
 # on success the current state counter of the 'ChaosActor' is written to stdout
@@ -263,24 +263,27 @@ $ echo $?
 0
 ```
 
-##### Not persistance while a minority of nodes available/reachable
+##### No persistance while a minority of nodes available/reachable
 
 On the contrary the [eventuate][eventuate] application must not be able to persist an event while only a minority of the
 cassandra nodes is available to itself. This happens as soon as you partition a combination of any two nodes like:
 
-    # this command creates a partition of c1 and c3 nodes
-    # leaving the 'chaos' application with only one reachable
-    # node (c2) behind
-    $ sudo blockade partition c1,c3
+``` bash
+# this command creates a partition of c1 and c3 nodes leaving
+# the 'chaos' application with only one reachable node (c2) behind
+$ sudo blockade partition c1,c3
+```
 
 
 ##### Reconnect to healthy state
 
 As soon as you remove all existing partitions or have to `chaos` application reachable to at least 2 cassandra nodes
-the event persistance should be working again:
+the event persistance should pick up its work again:
 
-    # remove all existing partitions
-    $ sudo blockade join
+``` bash
+# remove all existing partitions
+$ sudo blockade join
+```
 
 
 Auxiliary notes
