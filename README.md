@@ -289,7 +289,7 @@ $ sudo blockade join
 ##### Examplary test script
 
 Just to give a small example on how you might automate such tests you can find a very simple shell script in
-`scenarios/simple-partitions.sh` that checks for the expectations described above:
+[scenarios/simple-partitions.sh](./scenarios/simple-partitions.sh) that checks for the expectations described above:
 
 ``` bash
 $ scenarios/simple-partitions.sh
