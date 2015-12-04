@@ -7,8 +7,8 @@ Cassandra](http://cassandra.apache.org/). They support running Cassandra cluster
 and introducing network failures as partitions, packet loss and slow connections.
 
 This repository can be seen as a toolkit or collection of utilities you can use to test your [eventuate][eventuate]
-applications. Moreover we are going through an examplary test setup that shows you the possiblities you have with these
-tools and serves as a blueprint to build your own more complex test scenarios.
+applications. Moreover we are going to describe an examplary test setup that gives an introduction into these tools and
+serves as a blueprint to build your own more complex test scenarios.
 
 
 ##### Blockade
@@ -21,6 +21,7 @@ a container engine that allows you to package and run applications in a hardware
 
 You can find further information on the [blockade github page][blockade] regarding its configuration and the
 possibilities you have in addition to what is mentioned in here.
+
 
 Prerequisites
 -------------
@@ -165,10 +166,7 @@ chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL
 
 ### failures
 
-From now on you may introduce any kind of failure the [blockade][blockade] tool supports. This is my personal preference
-but I like to inspect the current [eventuate][eventuate] node's status in a [tmux](https://tmux.github.io/) split window
-while I modify the cluster's condition with `tmux split-window "docker logs -f chaos"`.
-
+From now on you may introduce any kind of failure the [blockade][blockade] tool supports. 
 
 ##### partition one cassandra node
 
@@ -214,7 +212,10 @@ You may also restart one or multiple nodes and inspect the effect on the [eventu
 #### Inspect test application output
 
 While playing with the conditions of the test cluster you can see the eventuate application output its current state on
-stdout:
+stdout. This is my personal preference but I like to inspect the current [eventuate][eventuate] node's status in a
+[tmux](https://tmux.github.io/) split window while I modify the cluster's condition with `tmux split-window "docker logs
+-f chaos"`.
+
 
 ```
 state = 65 (recovery = false)
