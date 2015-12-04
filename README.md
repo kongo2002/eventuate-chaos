@@ -6,6 +6,22 @@ Cassandra](http://cassandra.apache.org/). They support running Cassandra cluster
 [Docker][docker] and using [blockade][blockade] to easily generate failures like stopping and restarting of containers
 and introducing network failures as partitions, packet loss and slow connections.
 
+This repository can be seen as a toolkit or collection of utilities you can use to test your [eventuate][eventuate]
+applications. Moreover we are going through an examplary test setup that shows you the possiblities you have with these
+tools and serves as a blueprint to build your own more complex test scenarios.
+
+
+##### Blockade
+
+The test scenarios we are about to create mainly facilitate the [blockade][blockade] tool. Blockade is a utility for
+testing network failures and partitions in distributed applications. Blockade uses [Docker][docker] containers to run
+application processes and manages the network from the host system to create various failure scenarios. Docker itself is
+a container engine that allows you to package and run applications in a hardware-agnostic and platform-agnostic fashion
+- often called like somewhat *lightweight virtual machines*.
+
+You can find further information on the [blockade github page][blockade] regarding its configuration and the
+possibilities you have in addition to what is mentioned in here.
+
 Prerequisites
 -------------
 
@@ -13,7 +29,6 @@ Prerequisites
 
 - [docker][docker] (tested with docker >= 1.6)
 - [blockade][blockade] (currently a fork of the original [dcm-oss/blockade](https://github.com/dcm-oss/blockade))
-- [sbt](http://www.scala-sbt.org/download.html) (0.13.x or higher)
 
 ##### Initial setup
 
@@ -42,10 +57,12 @@ find it by itself:
 
 These steps only have to be taken once for the initial bootstrapping.
 
+
 #### Mac OS
 
 - [Vagrant][vagrant] (tested with 1.7.4)
 - [VirtualBox](https://www.virtualbox.org/)
+
 
 ##### Initial setup
 
@@ -61,6 +78,62 @@ $ vagrant ssh
 # mounted under /vagrant as usual
 cd /vagrant
 ```
+
+
+Example test setup
+------------------
+
+The examplary test setup we are describing in the following consists of 2 basic components:
+
+- **Eventuate chaos appliation**:
+    
+    This is the [eventuate][eventuate] application we are actually testing with. It is an `EventsourcedActor` that
+    continually (every 2 seconds) emits an event that increments an internal counter that is persisted. You can find its
+    implementation in [ChaosActor.scala](./src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala). The
+    container which the scala application is running in is named `chaos`.
+
+- **Cassandra cluster**:
+
+    This cassandra cluster contains 3 nodes each running in its own [docker][docker] container. The seed node `c1` is
+    the initially started one the remaining nodes `c2` and `c3` connect with.
+
+
+#### Configuration
+
+The test setup described above is encoded in the `blockade.yml` YAML configuration file that is used by
+[blockade][blockade] to manage the test cluster:
+
+``` yaml
+containers:
+  c1:
+    image: cassandra:2.2.3
+
+  c2:
+    image: cassandra:2.2.3
+    start_delay: 60
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  c3:
+    image: cassandra:2.2.3
+    start_delay: 60
+    links:
+      c1: "c1"
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  chaos:
+    image: uhlenheuer/sbt
+    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
+    volumes:
+      "${PWD}": "/app"
+    links: [ "c2", "c3" ]
+    environment:
+      CASSANDRA_NODES: "c1.cassandra.docker,c2.cassandra.docker,c3.cassandra.docker"
+```
+
 
 Running a Cassandra cluster
 ---------------------------
@@ -87,7 +160,6 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL
-c4              928f68f3754c    UP      172.17.0.7      NORMAL
 chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL
 ```
 
@@ -97,6 +169,7 @@ From now on you may introduce any kind of failure the [blockade][blockade] tool 
 but I like to inspect the current [eventuate][eventuate] node's status in a [tmux](https://tmux.github.io/) split window
 while I modify the cluster's condition with `tmux split-window "docker logs -f chaos"`.
 
+
 ##### partition one cassandra node
 
 ``` bash
@@ -105,9 +178,9 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     2
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     1
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
-c4              928f68f3754c    UP      172.17.0.7      NORMAL     2
 chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL     2
 ```
+
 
 ##### partition two cassandra nodes on its own
 
@@ -117,9 +190,9 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     1
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     3
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
-c4              928f68f3754c    UP      172.17.0.7      NORMAL     3
 chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL     3
 ```
+
 
 ##### flaky network connection of the eventuate node
 
@@ -129,7 +202,6 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     1
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     3
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
-c4              928f68f3754c    UP      172.17.0.7      NORMAL     3
 chaos           bb8c89f615ef    UP      172.17.0.6      FLAKY      3
 ```
 
@@ -137,7 +209,7 @@ chaos           bb8c89f615ef    UP      172.17.0.6      FLAKY      3
 
 You may also restart one or multiple nodes and inspect the effect on the [eventuate][eventuate] application as well:
 
-    $ sudo blockade restart c2 c4
+    $ sudo blockade restart c2 c3
 
 #### Inspect test application output
 
@@ -156,53 +228,6 @@ state = 75 (recovery = false)
 persist failure 698: Cassandra timeout during write query at consistency QUORUM (2 replica were required but only 1 acknowledged the write)
 state = 76 (recovery = false)
 state = 77 (recovery = false)
-```
-
-### Example configuration
-
-The examplary `blockade.yml` consists of 4 cassandra nodes (`c1` being the initial seed node) and one
-[eventuate][eventuate] [ChaosActor](./src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala).
-You can find further information on the [blockade github page][blockade] regarding its configuration and the
-possibilities you have in addition to what is mentioned in here already.
-
-``` yaml
-containers:
-  c1:
-    image: cassandra:2.2.3
-
-  c2:
-    image: cassandra:2.2.3
-    start_delay: 60
-    links:
-      c1: "c1"
-    environment:
-      CASSANDRA_SEEDS: "c1.cassandra.docker"
-
-  c3:
-    image: cassandra:2.2.3
-    start_delay: 60
-    links:
-      c1: "c1"
-    environment:
-      CASSANDRA_SEEDS: "c1.cassandra.docker"
-
-  c4:
-    image: cassandra:2.2.3
-    start_delay: 60
-    links:
-      c1: "c1"
-    environment:
-      CASSANDRA_SEEDS: "c1.cassandra.docker"
-
-  chaos:
-    image: uhlenheuer/sbt
-    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
-    volumes:
-      "${PWD}": "/app"
-    links:
-      c1: "c1"
-    environment:
-      CASSANDRA_NODES: "c1.cassandra.docker,c2.cassandra.docker,c3.cassandra.docker,c4.cassandra.docker"
 ```
 
 Auxiliary notes
