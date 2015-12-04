@@ -16,8 +16,8 @@ serves as a blueprint to build your own more complex test scenarios.
 The test scenarios we are about to create mainly facilitate the [blockade][blockade] tool. Blockade is a utility for
 testing network failures and partitions in distributed applications. Blockade uses [Docker][docker] containers to run
 application processes and manages the network from the host system to create various failure scenarios. Docker itself is
-a container engine that allows you to package and run applications in a hardware-agnostic and platform-agnostic fashion
-- often called like somewhat *lightweight virtual machines*.
+a container engine that allows you to package and run applications in a hardware-agnostic and platform-agnostic fashion -
+often called like somewhat *lightweight virtual machines*.
 
 You can find further information on the [blockade github page][blockade] regarding its configuration and the
 possibilities you have in addition to what is mentioned in here.
@@ -230,6 +230,58 @@ persist failure 698: Cassandra timeout during write query at consistency QUORUM 
 state = 76 (recovery = false)
 state = 77 (recovery = false)
 ```
+
+
+#### Expected behavior
+
+Just to recapture the current setup, we are dealing with a cassandra cluster of 3 nodes and the eventuate test
+application is configured to initialize its keyspace with a `replication-factor` of 3 (you may find further information
+on data replication in the
+[cassandra
+documentation](http://docs.datastax.com/en/cassandra/2.0/cassandra/architecture/architectureDataDistributeReplication_c.html)).
+As in this example read and write operations are processed on a `QUORUM` consistency level (see
+[documentation](http://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_config_consistency_c.html)) persisting an
+event may only succeed if at least 2 of 3 cassandra nodes are reachable from the eventuate application.
+
+Please keep in mind that any of the following failure scenarios may take a while until the state between application and
+the cassandra cluster has settled to a stable condition (i.e. reconnect timeouts ...).
+
+
+##### Persisting while one node is down/not reachable
+
+Consequently we expect the application to be able to persist any event while any or no cassandra node is partitioned from
+the test application container. You may inspect the state of the application with `docker logs -f chaos` like mentioned
+above or trigger a health check persist via the `./check-health.py` python script:
+
+``` bash
+# on success the current state counter of the 'ChaosActor' is written to stdout
+$ ./check-health.py
+250
+
+# the check script exits with a non-zero status code on failure
+$ echo $?
+0
+```
+
+##### Not persistance while a minority of nodes available/reachable
+
+On the contrary the [eventuate][eventuate] application must not be able to persist an event while only a minority of the
+cassandra nodes is available to itself. This happens as soon as you partition a combination of any two nodes like:
+
+    # this command creates a partition of c1 and c3 nodes
+    # leaving the 'chaos' application with only one reachable
+    # node (c2) behind
+    $ sudo blockade partition c1,c3
+
+
+##### Reconnect to healthy state
+
+As soon as you remove all existing partitions or have to `chaos` application reachable to at least 2 cassandra nodes
+the event persistance should be working again:
+
+    # remove all existing partitions
+    $ sudo blockade join
+
 
 Auxiliary notes
 -----------------
