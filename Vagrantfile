@@ -41,7 +41,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = BOX_NAME
 
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--name", "eventuate-chaos", "--memory", "4096", "--cpus", "2"]
+    vb.customize ["modifyvm", :id, "--name", "eventuate-chaos", "--memory", "8192", "--cpus", "2"]
   end
 
   config.vm.provision "docker"

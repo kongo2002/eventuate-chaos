@@ -1,0 +1,65 @@
+containers:
+  c1:
+    image: cassandra:2.2.3
+
+  c11:
+    image: cassandra:2.2.3
+    links: ["c1"]
+    environment:
+      CASSANDRA_SEEDS: "c1.cassandra.docker"
+
+  c2:
+    image: cassandra:2.2.3
+
+  c21:
+    image: cassandra:2.2.3
+    links: ["c2"]
+    environment:
+      CASSANDRA_SEEDS: "c2.cassandra.docker"
+
+  c3:
+    image: cassandra:2.2.3
+
+  c31:
+    image: cassandra:2.2.3
+    links: ["c3"]
+    environment:
+      CASSANDRA_SEEDS: "c3.cassandra.docker"
+
+  chaos1:
+    image: uhlenheuer/sbt
+    links: ["c1"]
+    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosSet chaos1 chaos2.sbt.docker chaos3.sbt.docker"]
+    ports: 
+      10001: 8080
+    volumes:
+      "${PWD}": /app
+    environment:
+      HOSTNAME: "chaos1.sbt.docker"
+      CASSANDRA_NODES: "c1.cassandra.docker,c11.cassandra.docker"
+
+  chaos2:
+    image: uhlenheuer/sbt
+    links: ["c2"]
+    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosSet chaos2 chaos1.sbt.docker chaos3.sbt.docker"]
+    ports: 
+      10002: 8080
+    volumes:
+      "${PWD}": /app
+    environment:
+      HOSTNAME: "chaos2.sbt.docker"
+      CASSANDRA_NODES: "c2.cassandra.docker,c21.cassandra.docker"
+
+  chaos3:
+    image: uhlenheuer/sbt
+    links: ["c3"]
+    command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosSet chaos3 chaos1.sbt.docker chaos2.sbt.docker"]
+    ports: 
+      10003: 8080
+    volumes:
+      "${PWD}": /app
+    environment:
+      HOSTNAME: "chaos3.sbt.docker"
+      CASSANDRA_NODES: "c3.cassandra.docker,c31.cassandra.docker"
+
+# vim: set et sw=2 sts=2:

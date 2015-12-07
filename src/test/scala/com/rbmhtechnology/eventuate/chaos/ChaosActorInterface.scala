@@ -9,20 +9,20 @@ import akka.io.Tcp
 import akka.util.ByteString
 import akka.pattern.ask
 import akka.util.Timeout
-import com.rbmhtechnology.eventuate.chaos.ChaosInterface.HealthCheckResult
+import com.rbmhtechnology.eventuate.chaos.ChaosActorInterface.HealthCheckResult
 import scala.concurrent.duration._
-import com.rbmhtechnology.eventuate.chaos.ChaosInterface.HealthCheck
+import com.rbmhtechnology.eventuate.chaos.ChaosActorInterface.HealthCheck
 
 import scala.util.Failure
 import scala.util.Success
 
 
-object ChaosInterface {
+object ChaosActorInterface {
   case class HealthCheck(requester: ActorRef)
   case class HealthCheckResult(state: Int, requester: ActorRef)
 }
 
-class ChaosInterface(chaosActor: ActorRef) extends Actor {
+class ChaosActorInterface(chaosActor: ActorRef) extends Actor {
   val port = 8080
   val endpoint = new InetSocketAddress(port)
 
