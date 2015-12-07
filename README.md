@@ -4,11 +4,11 @@ Eventuate chaos testing utilities
 This is very early work in progress on chaos testing utilities for [Eventuate][eventuate] and [Apache
 Cassandra](http://cassandra.apache.org/). They support running Cassandra clusters and Eventuate applications with
 [Docker][docker] and using [blockade][blockade] to easily generate failures like stopping and restarting of containers
-and introducing network failures as partitions, packet loss and slow connections.
+and introducing network failures such as partitions, packet loss and slow connections.
 
-This repository can be seen as a toolkit or collection of utilities you can use to test your [eventuate][eventuate]
-applications. Moreover we are going to describe an examplary test setup that gives an introduction into these tools and
-serves as a blueprint to build your own more complex test scenarios.
+This repository can be seen as a toolkit or collection of utilities which you can use to test your
+[eventuate][eventuate] applications. Moreover we are going to describe an examplary test setup that gives an
+introduction into these tools and serves as a blueprint to build your own more complex test scenarios.
 
 
 ##### Blockade
@@ -87,7 +87,7 @@ Example test setup
 The examplary test setup we are describing in the following consists of 2 basic components:
 
 - **Eventuate chaos appliation**:
-    
+
     This is the [eventuate][eventuate] application we are actually testing with. It is an `EventsourcedActor` that
     continually (every 2 seconds) emits an event that increments an internal counter that is persisted. You can find its
     implementation in [ChaosActor.scala](./src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala). The
@@ -166,7 +166,7 @@ chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL
 
 ### failures
 
-From now on you may introduce any kind of failure the [blockade][blockade] tool supports. 
+From now on you may introduce any kind of failure the [blockade][blockade] tool supports.
 
 ##### partition one cassandra node
 
@@ -251,11 +251,11 @@ the cassandra cluster has settled to a stable condition (i.e. reconnect timeouts
 
 Consequently we expect the application to be able to persist any event while any or no cassandra node is partitioned from
 the test application container. You may inspect the state of the application with `docker logs -f chaos` like mentioned
-above or trigger a health check via the `./check-health.py` python script:
+above or trigger a health check via the `./interact.py` python script:
 
 ``` bash
 # on success the current state counter of the 'ChaosActor' is written to stdout
-$ ./check-health.py
+$ ./interact.py
 250
 
 # the check script exits with a non-zero status code on failure

@@ -10,7 +10,7 @@ function settle() {
 
 function wait_till_healthy() {
     echo "waiting till cluster is up and running..."
-    while ! ./check-health.py >/dev/null 2>&1; do
+    while ! ./interact.py >/dev/null 2>&1; do
         sleep 2
     done
 }
@@ -26,7 +26,7 @@ for cassandra in $CASSANDRAS; do
     settle
 
     echo "checking persistance..."
-    ./check-health.py >/dev/null
+    ./interact.py >/dev/null
 done
 
 echo "*** checking non-working persistance with 2 node partitions"
@@ -38,7 +38,7 @@ for cassandra in $CASSANDRAS; do
     settle
 
     echo "checking persistance..."
-    ./check-health.py >/dev/null 2>&1 && (echo "persistance working when it shouldn't" && exit 1)
+    ./interact.py >/dev/null 2>&1 && (echo "persistance working when it shouldn't" && exit 1)
 
     # reconnect cluster for next partition
     sudo blockade join
@@ -47,6 +47,6 @@ done
 
 echo "*** checking final reconnect"
 
-./check-health.py >/dev/null
+./interact.py >/dev/null
 
 echo "test successfully finished"
