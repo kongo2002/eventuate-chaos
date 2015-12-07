@@ -47,6 +47,7 @@ class ChaosActorInterface(chaosActor: ActorRef) extends Actor {
         (chaosActor ? check).mapTo[HealthCheckResult] onComplete {
           case Success(result) =>
             result.requester ! Tcp.Write(ByteString(result.state.toString))
+            result.requester ! Tcp.Close
           case Failure(e) =>
             requester ! Tcp.Close
         }

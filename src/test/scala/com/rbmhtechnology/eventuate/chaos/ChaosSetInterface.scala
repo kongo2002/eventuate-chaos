@@ -42,14 +42,17 @@ class ChaosSetInterface(service: ORSetService[Int]) extends Actor {
         case command(c, value) if c == "add" =>
           service.add(setId, value.toInt).map { set =>
             requester ! writeSet(set)
+            requester ! Tcp.Close
           }
         case command(c, value) if c == "remove" =>
           service.remove(setId, value.toInt).map { set =>
             requester ! writeSet(set)
+            requester ! Tcp.Close
           }
         case c if c.startsWith("get") =>
           service.value(setId).map { set =>
             requester ! writeSet(set)
+            requester ! Tcp.Close
           }
         case c if c.startsWith("quit") =>
           context.system.terminate()

@@ -16,7 +16,7 @@ object ChaosSet extends App {
        |akka.remote.netty.tcp.hostname = "$hostname"
        |akka.remote.netty.tcp.port = 2552
        |akka.test.single-expect-default = 10s
-       |akka.loglevel = "DEBUG"
+       |akka.loglevel = "ERROR"
        |
        |eventuate.log.cassandra.contact-points = [${seeds.map(quote).mkString(",")}]
        |eventuate.log.cassandra.replication-factor = ${seeds.size}

@@ -17,16 +17,32 @@ def request(ip, port, message):
 
     # request
     sock.send(message)
-    data = sock.recv(BUFFER_SIZE)
+    data = ''
+
+    try:
+        while True:
+            received = sock.recv(BUFFER_SIZE)
+            if not received:
+                return data
+            data += received
+        return data
+    except socket.timeout:
+        return data
+    finally:
+        # disconnect
+        sock.close()
+
+def is_healthy(ip, port, message, verbose=True):
+    try:
+        data = request(ip, port, message)
+    except socket.error:
+        return False
 
     if data and len(data) > 0:
-        success = True
-        print(data)
-
-    # disconnect
-    sock.close()
-
-    return success
+        if verbose:
+            print(data)
+        return True
+    return False
 
 if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(description='Simple interaction with a TCP endpoint')
@@ -37,5 +53,5 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     MESSAGE = ' '.join(ARGS.message)
 
-    if not request(ARGS.ip, ARGS.port, MESSAGE):
+    if not is_healthy(ARGS.ip, ARGS.port, MESSAGE):
         sys.exit(1)
