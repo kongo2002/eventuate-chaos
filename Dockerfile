@@ -21,5 +21,8 @@ RUN wget -nv "http://downloads.typesafe.com/scala/2.11.7/scala-2.11.7.deb" && \
 VOLUME "/app"
 WORKDIR "/app"
 
+ADD build.sbt /app/build.sbt
+RUN cd /app && sbt test:compile && rm build.sbt
+
 ENTRYPOINT ["sbt"]
 CMD ["version"]
