@@ -10,8 +10,8 @@ trait ChaosLeveldbSetup extends ChaosSetup {
   def config(hostname: String) = baseConfig(hostname)
     .withFallback(ConfigFactory.parseString(
       s"""
-         |eventuate.snapshot.filesystem.dir = target/test-snapshot
-         |eventuate.log.leveldb.dir = target/test-log
+         |eventuate.snapshot.filesystem.dir = /tmp/test-snapshot
+         |eventuate.log.leveldb.dir = /tmp/test-log
      """.stripMargin))
 
   implicit val system = ActorSystem.create("location", config(hostname))

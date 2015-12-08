@@ -4,7 +4,7 @@ import akka.actor.Props
 import com.rbmhtechnology.eventuate.ReplicationEndpoint
 import com.rbmhtechnology.eventuate.crdt.CounterService
 
-object ChaosCounter extends ChaosCassandraSetup {
+object ChaosCounter extends ChaosLeveldbSetup {
   val service = new CounterService[Int](name, endpoint.logs(ReplicationEndpoint.DefaultLogName))
   endpoint.activate()
 
