@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import random
 import time
 import sys
@@ -23,15 +24,8 @@ def check_counters(nodes):
         counters.append(counter)
     return True
 
-if __name__ == '__main__':
-    SETTLE_TIMEOUT = 30
-    NODES = {'chaos1': 10001, 'chaos2': 10002, 'chaos3': 10003}
 
-    interact.wait_to_be_running(HOST, NODES)
-
-    if not check_counters(NODES):
-        sys.exit(1)
-
+def start_worker(nodes, interval):
     def random_op():
         op = random.choice(['inc', 'dec'])
         value = random.randint(1, MAX_VALUE)
@@ -39,8 +33,31 @@ if __name__ == '__main__':
 
     print('Starting requests...')
 
-    WORKER = interact.SetWorker(HOST, NODES, random_op, interval=0.1)
-    WORKER.start()
+    worker = interact.SetWorker(HOST, nodes, random_op, interval=interval)
+    worker.start()
+
+    return worker
+
+
+if __name__ == '__main__':
+    SETTLE_TIMEOUT = 30
+    NODES = {'chaos1': 10001, 'chaos2': 10002, 'chaos3': 10003}
+
+    PARSER = argparse.ArgumentParser(description='start CRDT-counter chaos test')
+    PARSER.add_argument('-i', '--iterations', type=int, default=30)
+    PARSER.add_argument('--interval', type=float, default=0.1)
+
+    ARGS = PARSER.parse_args()
+
+    print('Chaos iterations: %d' % ARGS.iterations)
+    print('Request interval: %.3f sec' % ARGS.interval)
+
+    interact.wait_to_be_running(HOST, NODES)
+
+    if not check_counters(NODES):
+        sys.exit(1)
+
+    WORKER = start_worker(NODES, ARGS.interval)
 
     # trigger some random partitions
     CFG = blockade.cli.load_config('blockade.yml')
@@ -50,7 +67,7 @@ if __name__ == '__main__':
         failure = random.choice([BLK.fast, BLK.flaky, BLK.slow])
         failure([node], None)
 
-    for idx in xrange(30):
+    for idx in xrange(ARGS.iterations):
         # partition a random chaos node
         node = random.choice(NODES.keys() + [None])
 

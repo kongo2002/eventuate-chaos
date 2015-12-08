@@ -22,15 +22,14 @@ class SetWorker(threading.Thread):
         self.get_op = get_op
 
     def run(self):
-        num_nodes = len(self.nodes)
-        nodemap = dict([(idx, v) for (idx, (k, v)) in enumerate(self.nodes.items())])
+        ports = self.nodes.values()
 
         while (self.operations is None or self.operations > 0) and not self.is_cancelled:
             if self.operations:
                 self.operations -= 1
 
-            node = random.randint(0, num_nodes-1)
-            request(self.host, nodemap[node], self.get_op())
+            port = random.choice(ports)
+            request(self.host, port, self.get_op())
 
             time.sleep(self.interval)
 
@@ -45,20 +44,20 @@ def request(ip, port, message):
 
     # request
     sock.send(message)
-    data = ''
+    data = []
 
     try:
         while True:
             received = sock.recv(BUFFER_SIZE)
             if not received:
-                return data
-            data += received
-        return data
+                break
+            data.append(received)
     except socket.timeout:
-        return data
+        pass
     finally:
         # disconnect
         sock.close()
+    return ''.join(data)
 
 def is_healthy(ip, port, message, verbose=True):
     try:
@@ -75,10 +74,7 @@ def is_healthy(ip, port, message, verbose=True):
 def wait_to_be_running(host, nodes):
     print('Waiting for %d nodes to be up and running' % (len(nodes)))
     while True:
-        all_running = True
-        for _, port in nodes.items():
-            all_running = all_running and is_healthy(host, port, 'get', False)
-
+        all_running = all(is_healthy(host, port, 'get', False) for port in nodes.values())
         if all_running:
             return True
         time.sleep(2)
