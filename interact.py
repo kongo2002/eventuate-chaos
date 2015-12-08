@@ -3,9 +3,41 @@
 import argparse
 import socket
 import sys
+import time
+import threading
+import random
 
 
 BUFFER_SIZE = 64
+
+class SetWorker(threading.Thread):
+    def __init__(self, host, nodes, get_op, operations=None, interval=0.5):
+        threading.Thread.__init__(self)
+
+        self.host = host
+        self.nodes = nodes
+        self.operations = operations
+        self.interval = interval
+        self.is_cancelled = False
+        self.get_op = get_op
+
+    def run(self):
+        num_nodes = len(self.nodes)
+        nodemap = dict([(idx, v) for (idx, (k, v)) in enumerate(self.nodes.items())])
+
+        while (self.operations is None or self.operations > 0) and not self.is_cancelled:
+            if self.operations:
+                self.operations -= 1
+            node = random.randint(0, num_nodes-1)
+            #value = random.randint(1, MAX_VALUE)
+            #operation = random.choice(['add', 'remove'])
+
+            request(self.host, nodemap[node], self.get_op())
+
+            time.sleep(self.interval)
+
+    def cancel(self):
+        self.is_cancelled = True
 
 def request(ip, port, message):
     success = False
@@ -43,6 +75,18 @@ def is_healthy(ip, port, message, verbose=True):
             print(data)
         return True
     return False
+
+def wait_to_be_running(host, nodes):
+    print('Waiting for %d nodes to be up and running' % (len(nodes)))
+    while True:
+        all_running = True
+        for _, port in nodes.items():
+            all_running = all_running and is_healthy(host, port, 'get', False)
+
+        if all_running:
+            return True
+        time.sleep(2)
+
 
 if __name__ == '__main__':
     PARSER = argparse.ArgumentParser(description='Simple interaction with a TCP endpoint')
