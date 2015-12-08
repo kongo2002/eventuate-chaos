@@ -6,6 +6,7 @@ import com.rbmhtechnology.eventuate.log.cassandra.CassandraEventLog
 import com.typesafe.config.ConfigFactory
 
 trait ChaosCassandraSetup extends ChaosSetup {
+
   def config(hostname: String, seeds: Seq[String]) = baseConfig(hostname)
     .withFallback(ConfigFactory.parseString(
     s"""
@@ -16,11 +17,15 @@ trait ChaosCassandraSetup extends ChaosSetup {
   def cassandras = sys.env.get("CASSANDRA_NODES").map(_.split(","))
     .getOrElse(Array("c1.cassandra.docker", "c2.cassandra.docker"))
 
-  implicit val system = ActorSystem.create("location", config(hostname, cassandras))
+  def getSystem = ActorSystem.create("location", config(hostname, cassandras))
 
   // create and activate eventuate replication endpoint
-  lazy val endpoint = new ReplicationEndpoint(name,
-    Set(ReplicationEndpoint.DefaultLogName),
-    CassandraEventLog.props(_),
-    connections)
+  def getEndpoint(implicit system: ActorSystem) = {
+    val ep = new ReplicationEndpoint(name,
+      Set(ReplicationEndpoint.DefaultLogName),
+      CassandraEventLog.props(_),
+      connections)
+    ep.activate()
+    ep
+  }
 }

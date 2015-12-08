@@ -14,10 +14,14 @@ trait ChaosLeveldbSetup extends ChaosSetup {
          |eventuate.log.leveldb.dir = /tmp/test-log
      """.stripMargin))
 
-  implicit val system = ActorSystem.create("location", config(hostname))
+  def getSystem = ActorSystem.create("location", config(hostname))
 
   // create and activate eventuate replication endpoint
-  lazy val endpoint = new ReplicationEndpoint(name,
-    Set(ReplicationEndpoint.DefaultLogName),
-    LeveldbEventLog.props(_), connections)
+  def getEndpoint(implicit system: ActorSystem) = {
+    val ep = new ReplicationEndpoint(name,
+      Set(ReplicationEndpoint.DefaultLogName),
+      LeveldbEventLog.props(_), connections)
+    ep.activate()
+    ep
+  }
 }
