@@ -72,7 +72,7 @@ if __name__ == '__main__':
     WORKER.start()
 
     # trigger some random partitions
-    CFG = blockade.cli.load_config('blockade-set.yml')
+    CFG = blockade.cli.load_config('blockade.yml')
     BLK = blockade.cli.get_blockade(CFG)
 
     for idx in xrange(6):

@@ -33,7 +33,7 @@ containers:
     ports: 
       10001: 8080
     volumes:
-      "${PWD}": /app
+      "${PWD}/../..": /app
     environment:
       HOSTNAME: "chaos1.sbt.docker"
       CASSANDRA_NODES: "c1.cassandra.docker,c11.cassandra.docker"
@@ -45,7 +45,7 @@ containers:
     ports: 
       10002: 8080
     volumes:
-      "${PWD}": /app
+      "${PWD}/../..": /app
     environment:
       HOSTNAME: "chaos2.sbt.docker"
       CASSANDRA_NODES: "c2.cassandra.docker,c21.cassandra.docker"
@@ -57,7 +57,7 @@ containers:
     ports: 
       10003: 8080
     volumes:
-      "${PWD}": /app
+      "${PWD}/../..": /app
     environment:
       HOSTNAME: "chaos3.sbt.docker"
       CASSANDRA_NODES: "c3.cassandra.docker,c31.cassandra.docker"
