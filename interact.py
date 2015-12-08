@@ -28,10 +28,8 @@ class SetWorker(threading.Thread):
         while (self.operations is None or self.operations > 0) and not self.is_cancelled:
             if self.operations:
                 self.operations -= 1
-            node = random.randint(0, num_nodes-1)
-            #value = random.randint(1, MAX_VALUE)
-            #operation = random.choice(['add', 'remove'])
 
+            node = random.randint(0, num_nodes-1)
             request(self.host, nodemap[node], self.get_op())
 
             time.sleep(self.interval)
@@ -40,8 +38,6 @@ class SetWorker(threading.Thread):
         self.is_cancelled = True
 
 def request(ip, port, message):
-    success = False
-
     # connect
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1.0)
