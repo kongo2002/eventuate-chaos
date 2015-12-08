@@ -17,7 +17,15 @@ trait ChaosSetup extends App {
 
   protected def quote(str: String) = "\"" + str + "\""
 
-  def name = args(0)
+  def name = {
+    if (args == null || args.length < 1) {
+      Console.err.println("no <nodename> specified")
+      sys.exit(1)
+    } else {
+      args(0)
+    }
+  }
+
   def hostname = sys.env.getOrElse("HOSTNAME", s"$name.sbt.docker")
 
   // replication connection to other node(s)
