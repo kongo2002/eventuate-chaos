@@ -76,6 +76,11 @@ The expected and tested behavior is to end up with all Eventuate nodes respondin
 network failures have been resolved. Even though during the test run nodes are partitioned from each other the counters
 are supposed to converge to the same correct value.
 
+The default settings of the test script are to inject 30 partitions on the network every 10 seconds and moreover
+toggling one random node's network to being *slow* or *flaky* (more information on [blockade][blockade]) separated by 5
+seconds each. In the meantime every 0.1 seconds a request for either a *decrement* or *increment* operation is triggered
+towards one random Eventuate node.
+
 Some parameters like request interval (`--interval`), number of network failures to inject (`--iterations`) and the
 number of participating Eventuate nodes (`--locations`) may be configured at the command line as well.
 
