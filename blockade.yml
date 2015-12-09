@@ -16,8 +16,8 @@ containers:
     environment:
       CASSANDRA_SEEDS: "c1.cassandra.docker"
 
-  chaos:
-    image: uhlenheuer/sbt
+  location-1:
+    image: eventuate-chaos/sbt
     command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
     volumes:
       "${PWD}": "/app"

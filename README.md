@@ -6,15 +6,15 @@ Cassandra](http://cassandra.apache.org/). They support running Cassandra cluster
 [Docker][docker] and using [blockade][blockade] to easily generate failures like stopping and restarting of containers
 and introducing network failures such as partitions, packet loss and slow connections.
 
-This repository can be seen as a toolkit or collection of utilities which you can use to test your
-[eventuate][eventuate] applications. Moreover we are going to describe an examplary test setup that gives an
-introduction into these tools and serves as a blueprint to build your own more complex test scenarios.
+This repository can be seen as a toolkit or collection of utilities which you can use to test your Eventuate
+applications. Moreover we are going to describe an examplary test setup that gives an introduction into these tools and
+serves as a blueprint to build your own more complex test scenarios.
 
 
 ##### Blockade
 
 The test scenarios we are about to create mainly facilitate the [blockade][blockade] tool. Blockade is a utility for
-testing network failures and partitions in distributed applications. Blockade uses [Docker][docker] containers to run
+testing network failures and partitions in distributed applications. Blockade uses Docker containers to run
 application processes and manages the network from the host system to create various failure scenarios. Docker itself is
 a container engine that allows you to package and run applications in a hardware-agnostic and platform-agnostic fashion -
 often called like somewhat *lightweight virtual machines*.
@@ -28,21 +28,20 @@ Prerequisites
 
 #### Linux
 
-- [docker][docker] (tested with docker >= 1.6)
+- [Docker][docker] (tested with docker >= 1.6)
 - [blockade][blockade] (currently a fork of the original [dcm-oss/blockade](https://github.com/dcm-oss/blockade))
 
 ##### Initial setup
 
-Given your [docker][docker] daemon is running and you have [blockade][blockade] in your `$PATH` you are basically ready
-to go. All you have to do once is to pull or build the necessary [docker][docker] containers the test cluster is based
-on:
+Given your Docker daemon is running and you have [blockade][blockade] in your `$PATH` you are basically ready to go. All
+you have to do once is to pull or build the necessary Docker containers the test cluster is based on:
 
 ``` bash
 # cassandra image
 $ docker pull cassandra:2.2.3
 
 # sbt + scala + java8 base image
-$ docker build -t uhlenheuer/sbt .
+$ docker build -t eventuate-chaos/sbt .
 ```
 
 After that is done you can start the minimal docker DNS container that is used to identify the containers with each
@@ -67,9 +66,10 @@ These steps only have to be taken once for the initial bootstrapping.
 
 ##### Initial setup
 
-As [docker][docker] does not run natively on Mac OS you have to use an existing *docker machine* setup and follow the
-steps under [Linux](#linux) or use the pre-configured [Vagrant][vagrant] image that ships with this repository. If you
-choose the latter you just have to build the image by running `vagrant up` and ssh into your new machine:
+As Docker does not run natively on Mac OS you have to use an existing [docker machine](https://docs.docker.com/machine/)
+setup and follow the steps under [Linux](#linux) or use the pre-configured [Vagrant][vagrant] image that ships with this
+repository. If you choose the latter you just have to build the image by running `vagrant up` and ssh into your new
+machine:
 
 ```bash
 $ vagrant up
@@ -86,17 +86,18 @@ Example test setup
 
 The examplary test setup we are describing in the following consists of 2 basic components:
 
-- **Eventuate chaos appliation**:
+- **Eventuate test appliation**:
 
-    This is the [eventuate][eventuate] application we are actually testing with. It is an `EventsourcedActor` that
-    continually (every 2 seconds) emits an event that increments an internal counter that is persisted. You can find its
+    This is the Eventuate application we are actually testing with. It is an
+    [EventsourcedActor](http://rbmhtechnology.github.io/eventuate/user-guide.html#event-sourced-actors) that continually
+    (every 2 seconds) emits an event that increments an internal counter by persisting it changes. You can find its
     implementation in [ChaosActor.scala](./src/test/scala/com/rbmhtechnology/eventuate/chaos/ChaosActor.scala). The
-    container which the scala application is running in is named `chaos`.
+    container which the scala application is running in is named `location-1`.
 
 - **Cassandra cluster**:
 
-    This cassandra cluster contains 3 nodes each running in its own [docker][docker] container. The seed node `c1` is
-    the initially started one the remaining nodes `c2` and `c3` connect with.
+    This cassandra cluster contains 3 nodes each running in its own Docker container. The seed node `c1` is the
+    initially started one the remaining nodes `c2` and `c3` connect with.
 
 
 #### Configuration
@@ -125,8 +126,8 @@ containers:
     environment:
       CASSANDRA_SEEDS: "c1.cassandra.docker"
 
-  chaos:
-    image: uhlenheuer/sbt
+  location-1:
+    image: eventuate-chaos/sbt
     command: ["test:run-main com.rbmhtechnology.eventuate.chaos.ChaosActor -d"]
     volumes:
       "${PWD}": "/app"
@@ -152,8 +153,10 @@ $ sudo blockade up
 ```
 
 Depending on the cassandra version (> 2.1) you have to configure a reasonable startup delay for every cassandra node
-(i.e. 60 seconds). This may increase the initial startup time a lot. Once all nodes are up and running you can inspect
-your running cluster via `blockade status`:
+like 60 seconds (see the
+[documentation](https://docs.datastax.com/en/cassandra/2.1/cassandra/operations/ops_add_node_to_cluster_t.html) for
+further information). This may increase the initial startup time a lot. Once all nodes are up and running you can
+inspect your running cluster via `blockade status`:
 
 ```bash
 $ sudo blockade status
@@ -161,7 +164,7 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL
-chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL
+location-1      bb8c89f615ef    UP      172.17.0.6      NORMAL
 ```
 
 ### failures
@@ -176,11 +179,14 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     2
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     1
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
-chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL     2
+location-1      bb8c89f615ef    UP      172.17.0.6      NORMAL     2
 ```
 
 
-##### partition two cassandra nodes on its own
+##### partition two cassandra nodes
+
+As you can see in the `PARTITION` column of the command output all cassandra nodes are separated from each other while
+the test application (`location-1`) can reach the cassandra node `c2` only.
 
 ``` bash
 $ sudo blockade partition c1 c3
@@ -188,60 +194,60 @@ NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     1
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     3
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
-chaos           bb8c89f615ef    UP      172.17.0.6      NORMAL     3
+location-1      bb8c89f615ef    UP      172.17.0.6      NORMAL     3
 ```
 
 
-##### flaky network connection of the eventuate node
+##### flaky network connection of the Eventuate node
 
 ``` bash
-$ sudo blockade flaky chaos
+$ sudo blockade flaky location-1
 NODE            CONTAINER ID    STATUS  IP              NETWORK    PARTITION
 c1              8ccf90e8f76e    UP      172.17.0.3      NORMAL     1
 c2              5c65f3ca62ec    UP      172.17.0.5      NORMAL     3
 c3              4b630db6a19e    UP      172.17.0.4      NORMAL     2
-chaos           bb8c89f615ef    UP      172.17.0.6      FLAKY      3
+location-1      bb8c89f615ef    UP      172.17.0.6      FLAKY      3
 ```
 
 ##### restart of nodes
 
-You may also restart one or multiple nodes and inspect the effect on the [eventuate][eventuate] application as well:
+You may also restart one or multiple nodes and inspect the effect on the Eventuate application as well:
 
     $ sudo blockade restart c2 c3
 
 #### Inspect test application output
 
-While playing with the conditions of the test cluster you can see the eventuate application output its current state on
-stdout. This is my personal preference but I like to inspect the current [eventuate][eventuate] node's status in a
-[tmux](https://tmux.github.io/) split window while I modify the cluster's condition with `tmux split-window "docker logs
--f chaos"`.
+While playing with the conditions of the test cluster you can see the Eventuate application output its current state
+(being the actual counter value) on stdout. This is my personal preference but I like to inspect the current Eventuate
+node's status in a [tmux](https://tmux.github.io/) split window while I modify the cluster's condition with `tmux
+split-window "docker logs -f location-1"`:
 
 
 ```
-state = 65 (recovery = false)
-state = 66 (recovery = false)
+counter = 65 (recovery = false)
+counter = 66 (recovery = false)
 persist failure 696: Not enough replica available for query at consistency QUORUM (2 required but only 1 alive)
 persist failure 697: Not enough replica available for query at consistency QUORUM (2 required but only 1 alive)
-state = 67 (recovery = false)
+counter = 67 (recovery = false)
 ...
-state = 74 (recovery = false)
-state = 75 (recovery = false)
+counter = 74 (recovery = false)
+counter = 75 (recovery = false)
 persist failure 698: Cassandra timeout during write query at consistency QUORUM (2 replica were required but only 1 acknowledged the write)
-state = 76 (recovery = false)
-state = 77 (recovery = false)
+counter = 76 (recovery = false)
+counter = 77 (recovery = false)
 ```
 
 
 #### Expected behavior
 
-Just to recapture the current setup, we are dealing with a cassandra cluster of 3 nodes and the eventuate test
+Just to recapture the current setup, we are dealing with a cassandra cluster of 3 nodes and the Eventuate test
 application is configured to initialize its keyspace with a `replication-factor` of 3 (you may find further information
 on data replication in the
 [cassandra
-documentation](http://docs.datastax.com/en/cassandra/2.0/cassandra/architecture/architectureDataDistributeReplication_c.html)).
+documentation](http://docs.datastax.com/en/cassandra/2.2/cassandra/architecture/archDataDistributeReplication.html)).
 As in this example read and write operations are processed on a `QUORUM` consistency level (see
-[documentation](http://docs.datastax.com/en/cassandra/2.0/cassandra/dml/dml_config_consistency_c.html)) persisting an
-event may only succeed if at least 2 of 3 cassandra nodes are reachable from the eventuate application.
+[documentation](http://docs.datastax.com/en/cassandra/2.2/cassandra/dml/dmlConfigConsistency.html)) persisting an
+event may only succeed if at least 2 of 3 cassandra nodes are reachable from the Eventuate application.
 
 Please keep in mind that any of the following failure scenarios may take a while until the state between application and
 the cassandra cluster has settled to a stable condition (i.e. reconnect timeouts ...).
@@ -249,9 +255,9 @@ the cassandra cluster has settled to a stable condition (i.e. reconnect timeouts
 
 ##### Persisting while one node is down/not reachable
 
-Consequently we expect the application to be able to persist any event while any or no cassandra node is partitioned from
-the test application container. You may inspect the state of the application with `docker logs -f chaos` like mentioned
-above or trigger a health check via the `./interact.py` python script:
+Consequently we expect the application to be able to persist any event while any or no cassandra node is partitioned
+from the test application container. You may inspect the state of the application with `docker logs -f location-1` like
+mentioned above or trigger a health check via the `./interact.py` python script:
 
 ``` bash
 # on success the current state counter of the 'ChaosActor' is written to stdout
@@ -263,22 +269,28 @@ $ echo $?
 0
 ```
 
-##### No persistance while a minority of nodes available/reachable
+The health check of the `interact.py` script instructs the test application to persist a special `HealthCheck` event and
+returns with the current counter state if the persist of that given event succeeded within 1 second. The script
+basically sends a minor command (`"persist"`) via TCP on port 8080 - so you may achieve the same result via `telnet` as
+well.
 
-On the contrary the [eventuate][eventuate] application must not be able to persist an event while only a minority of the
-cassandra nodes is available to itself. This happens as soon as you partition a combination of any two nodes like:
+
+##### No persistence while a minority of nodes available/reachable
+
+On the contrary the Eventuate application must not be able to persist an event while only a minority of the cassandra
+nodes is available to itself. This happens as soon as you partition a combination of any two nodes like:
 
 ``` bash
 # this command creates a partition of c1 and c3 nodes leaving
-# the 'chaos' application with only one reachable node (c2) behind
+# the test application with only one reachable node (c2) behind
 $ sudo blockade partition c1,c3
 ```
 
 
 ##### Reconnect to healthy state
 
-As soon as you remove all existing partitions or have to `chaos` application reachable to at least 2 cassandra nodes
-the event persistance should pick up its work again:
+As soon as you remove all existing partitions or give the test application access to at least 2 cassandra nodes the
+event persistence should pick up its work again:
 
 ``` bash
 # remove all existing partitions
@@ -293,7 +305,7 @@ Just to give a small example on how you might automate such tests you can find a
 
 ``` bash
 $ scenarios/simple-partitions.sh
-*** checking working persistance with 1 node partition each
+*** checking working persistence with 1 node partition each
 partition of cassandra 'c1'
 waiting 40 seconds for cluster to settle...
 checking health...
@@ -303,16 +315,16 @@ checking health...
 partition of cassandra 'c3'
 waiting 40 seconds for cluster to settle...
 checking health...
-*** checking non-working persistance with 2 node partitions
-partition of chaos application + 'c1'
+*** checking non-working persistence with 2 node partitions
+partition of test application + 'c1'
 waiting 40 seconds for cluster to settle...
 checking health...
 waiting till cluster is up and running...
-partition of chaos application + 'c2'
+partition of test application + 'c2'
 waiting 40 seconds for cluster to settle...
 checking health...
 waiting till cluster is up and running...
-partition of chaos application + 'c3'
+partition of test application + 'c3'
 waiting 40 seconds for cluster to settle...
 checking health...
 waiting till cluster is up and running...
@@ -348,7 +360,9 @@ means you can observe its current status via
 In case your are using cassandra version `> 2.1` (i.e. `2.2.3` like our example) you have to delay the startup of the
 cassandra nodes so that the node topology has enough time to settle in. You may alternatively test with an older version
 like `2.1.6` and get rid of those `start_delay` values in your `blockade.yml` resulting in much faster startup times. If
-that makes sense depends completely on what you intend to test.
+that makes sense depends completely on what you intend to test. The [cassandra
+documentation](https://docs.datastax.com/en/cassandra/2.1/cassandra/operations/ops_add_node_to_cluster_t.html) provides
+further information on that issue.
 
 
 #### Interaction with docker commands

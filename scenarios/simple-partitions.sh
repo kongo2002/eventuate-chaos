@@ -17,7 +17,7 @@ function wait_till_healthy() {
 
 wait_till_healthy
 
-echo "*** checking working persistance with 1 node partition each"
+echo "*** checking working persistence with 1 node partition each"
 
 for cassandra in $CASSANDRAS; do
     echo "partition of cassandra '$cassandra'"
@@ -25,20 +25,20 @@ for cassandra in $CASSANDRAS; do
     sudo blockade partition $cassandra
     settle
 
-    echo "checking persistance..."
+    echo "checking persistence..."
     ./interact.py >/dev/null
 done
 
-echo "*** checking non-working persistance with 2 node partitions"
+echo "*** checking non-working persistence with 2 node partitions"
 
 for cassandra in $CASSANDRAS; do
     echo "partition of chaos application + '$cassandra'"
 
-    sudo blockade partition chaos,$cassandra
+    sudo blockade partition location-1,$cassandra
     settle
 
-    echo "checking persistance..."
-    ./interact.py >/dev/null 2>&1 && (echo "persistance working when it shouldn't" && exit 1)
+    echo "checking persistence..."
+    ./interact.py >/dev/null 2>&1 && (echo "persistence working when it shouldn't" && exit 1)
 
     # reconnect cluster for next partition
     sudo blockade join

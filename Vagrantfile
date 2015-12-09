@@ -30,7 +30,7 @@ python setup.py develop
 docker pull cassandra:2.2.3
 docker pull tonistiigi/dnsdock
 
-docker build -t uhlenheuer/sbt /vagrant
+docker build -t eventuate-chaos/sbt /vagrant
 
 # start dns if necessary
 /vagrant/start-dns.sh -f
@@ -47,5 +47,3 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "docker"
   config.vm.provision "shell", inline: script
 end
-
-# vim: set ft=ruby:

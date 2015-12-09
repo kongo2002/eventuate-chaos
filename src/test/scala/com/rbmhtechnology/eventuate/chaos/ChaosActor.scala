@@ -85,7 +85,6 @@ class ChaosActor(val eventLog: ActorRef) extends EventsourcedActor {
   override def onCommand: Receive = {
     case i: Int => persist(i) {
       case Success(i) =>
-        onEvent(i)
         scheduleCommand()
       case Failure(e) =>
         failures += 1
@@ -106,7 +105,7 @@ class ChaosActor(val eventLog: ActorRef) extends EventsourcedActor {
   override def onEvent: Receive = {
     case i: Int =>
       state += i
-      println(s"state = $state (recovery = $recovering)")
+      println(s"counter = $state (recovery = $recovering)")
   }
 
   import context.dispatcher
