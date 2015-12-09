@@ -4,6 +4,9 @@
 This scenario is another example of an [Eventuate][eventuate] application that is being tested under network failures
 and partitions.
 
+> In case you haven't read the basic README of this repository already you should definitely do so before continuing
+> with this test scenario to gain as much benefit of the following explanations as possible.
+
 
 ## Test setup
 
@@ -68,6 +71,10 @@ Starting requests...
 Joining cluster - waiting 30 seconds to settle...
 counter values match up correctly
 ```
+
+The expected and tested behavior is to end up with all Eventuate nodes responding with the same counter value after the
+network failures have been resolved. Even though during the test run nodes are partitioned from each other the counters
+are supposed to converge to the same correct value.
 
 Some parameters like request interval (`--interval`), number of network failures to inject (`--iterations`) and the
 number of participating Eventuate nodes (`--locations`) may be configured at the command line as well.
