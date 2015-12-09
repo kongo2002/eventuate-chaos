@@ -76,16 +76,7 @@ if __name__ == '__main__':
         failure([node], None)
 
     for idx in xrange(ARGS.iterations):
-        # partition a random chaos node
-        node = random.choice(NODES.keys() + [None])
-
-        if node:
-            print('Partition of "%s"' % node)
-            BLK.partition([[node]])
-        else:
-            print('Join of cluster')
-            BLK.join()
-
+        BLK.random_partition()
         time.sleep(5)
 
         random_network(random.choice(NODES.keys()))
