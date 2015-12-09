@@ -3,4 +3,5 @@
 *.log
 *.pyc
 .idea*
+.vagrant
 target/
