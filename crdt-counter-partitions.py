@@ -41,16 +41,24 @@ def start_worker(nodes, interval):
 
 if __name__ == '__main__':
     SETTLE_TIMEOUT = 30
-    NODES = {'chaos1': 10001, 'chaos2': 10002, 'chaos3': 10003}
-
     PARSER = argparse.ArgumentParser(description='start CRDT-counter chaos test')
     PARSER.add_argument('-i', '--iterations', type=int, default=30)
     PARSER.add_argument('--interval', type=float, default=0.1)
+    PARSER.add_argument('-l', '--locations', type=int, default=3)
 
     ARGS = PARSER.parse_args()
 
+    # we are making some assumptions in here:
+    # every location is named 'location-<id>' and its TCP port 8080
+    # is mapped to the host port '10000+<id>'
+    NODES = dict(('location-%d' % idx, 10000+idx) for idx in xrange(1, ARGS.locations+1))
+
     print('Chaos iterations: %d' % ARGS.iterations)
     print('Request interval: %.3f sec' % ARGS.interval)
+
+    print('Nodes:')
+    for node in NODES.keys():
+        print('  ' + node)
 
     interact.wait_to_be_running(HOST, NODES)
 

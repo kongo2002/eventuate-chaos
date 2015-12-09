@@ -1,32 +1,32 @@
 containers:
-  chaos1:
-    image: uhlenheuer/sbt
-    command: ["test:run-nobootcp com.rbmhtechnology.eventuate.chaos.ChaosCounter chaos1 chaos2.sbt.docker chaos3.sbt.docker"]
+  location-1:
+    image: eventuate-chaos/sbt
+    command: ["test:run-nobootcp com.rbmhtechnology.eventuate.chaos.ChaosCounter location-1 location-2.sbt.docker location-3.sbt.docker"]
     ports: 
       10001: 8080
     volumes:
       "${PWD}/../..": /app
     environment:
-      HOSTNAME: "chaos1.sbt.docker"
+      HOSTNAME: "location-1.sbt.docker"
 
-  chaos2:
-    image: uhlenheuer/sbt
-    command: ["test:run-nobootcp com.rbmhtechnology.eventuate.chaos.ChaosCounter chaos2 chaos1.sbt.docker chaos3.sbt.docker"]
+  location-2:
+    image: eventuate-chaos/sbt
+    command: ["test:run-nobootcp com.rbmhtechnology.eventuate.chaos.ChaosCounter location-2 location-1.sbt.docker location-3.sbt.docker"]
     ports: 
       10002: 8080
     volumes:
       "${PWD}/../..": /app
     environment:
-      HOSTNAME: "chaos2.sbt.docker"
+      HOSTNAME: "location-2.sbt.docker"
 
-  chaos3:
-    image: uhlenheuer/sbt
-    command: ["test:run-nobootcp com.rbmhtechnology.eventuate.chaos.ChaosCounter chaos3 chaos1.sbt.docker chaos2.sbt.docker"]
+  location-3:
+    image: eventuate-chaos/sbt
+    command: ["test:run-nobootcp com.rbmhtechnology.eventuate.chaos.ChaosCounter location-3 location-1.sbt.docker location-2.sbt.docker"]
     ports: 
       10003: 8080
     volumes:
       "${PWD}/../..": /app
     environment:
-      HOSTNAME: "chaos3.sbt.docker"
+      HOSTNAME: "location-3.sbt.docker"
 
 # vim: set et sw=2 sts=2:
