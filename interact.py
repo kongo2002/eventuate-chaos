@@ -10,8 +10,23 @@ import random
 
 BUFFER_SIZE = 64
 
-class SetWorker(threading.Thread):
-    def __init__(self, host, nodes, get_op, operations=None, interval=0.5):
+
+class Operation(object):
+    '''Abstract base class that is used for "RequestWorker" operations
+    '''
+    def init(self, host, nodes):
+        pass
+
+    def operation(self, iteration, state):
+        '''
+        This method will be called on very iteration of a worker request. You
+        may modify the passed 'state' object.
+        '''
+        raise NotImplementedError("you have to implement 'Operation.operation'")
+
+
+class RequestWorker(threading.Thread):
+    def __init__(self, host, nodes, operation, operations=None, interval=0.5):
         threading.Thread.__init__(self)
 
         self.host = host
@@ -19,9 +34,13 @@ class SetWorker(threading.Thread):
         self.operations = operations
         self.interval = interval
         self.is_cancelled = False
-        self.get_op = get_op
+        self.operation = operation
+        self.iterations = 0
+        self.state = None
 
     def run(self):
+        # initialize operation's state (if given)
+        self.state = self.operation.init(self.host, self.nodes)
         ports = self.nodes.values()
 
         while (self.operations is None or self.operations > 0) and not self.is_cancelled:
@@ -29,12 +48,14 @@ class SetWorker(threading.Thread):
                 self.operations -= 1
 
             port = random.choice(ports)
-            request(self.host, port, self.get_op())
+            request(self.host, port, self.operation.operation(self.iterations, self.state))
 
+            self.iterations += 1
             time.sleep(self.interval)
 
     def cancel(self):
         self.is_cancelled = True
+
 
 def request(ip, port, message):
     # connect
@@ -59,6 +80,7 @@ def request(ip, port, message):
         sock.close()
     return ''.join(data)
 
+
 def is_healthy(ip, port, message, verbose=True):
     try:
         data = request(ip, port, message)
@@ -71,8 +93,9 @@ def is_healthy(ip, port, message, verbose=True):
         return True
     return False
 
+
 def wait_to_be_running(host, nodes):
-    print('Waiting for %d nodes to be up and running' % (len(nodes)))
+    print('Waiting for %d nodes to be up and running...' % (len(nodes)))
     while True:
         all_running = all(is_healthy(host, port, 'get', False) for port in nodes.values())
         if all_running:

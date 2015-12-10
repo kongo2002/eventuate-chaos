@@ -18,21 +18,23 @@ def get_set(port):
     except:
         return set()
 
-if __name__ == '__main__':
-    SETTLE_TIMEOUT = 60
-    NODES = {'chaos1': 10001, 'chaos2': 10002, 'chaos3': 10003}
+class SetOperation(interact.Operation):
 
-    interact.wait_to_be_running(HOST, NODES)
-
-    def random_op():
+    def operation(self, idx, state):
         op = random.choice(['add', 'remove'])
         value = random.randint(1, MAX_VALUE)
         return '%s %d' % (op, value)
 
+if __name__ == '__main__':
+    SETTLE_TIMEOUT = 60
+    NODES = {'location1': 10001, 'location2': 10002, 'location3': 10003}
+
+    interact.wait_to_be_running(HOST, NODES)
+
     print('Starting requests...')
 
     # start worker that randomly trigger 'add' and 'remove' commands
-    WORKER = interact.SetWorker(HOST, NODES, random_op)
+    WORKER = interact.RequestWorker(HOST, NODES, SetOperation())
     WORKER.start()
 
     # trigger some random partitions

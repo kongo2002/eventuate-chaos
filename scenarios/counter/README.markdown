@@ -18,9 +18,9 @@ service that is distributed among three Eventuate nodes. The persistence of the 
 
 #### Participating nodes
 
-- `location-1`: TCP port 8080 -> `10001`
-- `location-2`: TCP port 8080 -> `10002`
-- `location-3`: TCP port 8080 -> `10003`
+- `location-1`: TCP port `8080` -> host port `10001`
+- `location-2`: TCP port `8080` -> host port `10002`
+- `location-3`: TCP port `8080` -> host port `10003`
 
 
 #### Scenario
@@ -66,15 +66,18 @@ Nodes:
   location-1
   location-2
   location-3
-Waiting for 3 nodes to be up and running
+Waiting for 3 nodes to be up and running...
 Starting requests...
 Joining cluster - waiting 30 seconds to settle...
-counter values match up correctly
+Processed 659 requests in the meantime
+Counter value (471) matches up correctly
 ```
 
 The expected and tested behavior is to end up with all Eventuate nodes responding with the same counter value after the
 network failures have been resolved. Even though during the test run nodes are partitioned from each other the counters
-are supposed to converge to the same correct value.
+are supposed to converge to the same correct value. Moreover the actual counter value is compared with the value that is
+expected by calculating all requests that are made during the test. Of course this value won't match up in case you
+issue commands by yourself during the test setup.
 
 The default settings of the test script are to inject 30 partitions on the network every 10 seconds and moreover
 toggling one random node's network to being *slow* or *flaky* (more information on [blockade][blockade]) separated by 5

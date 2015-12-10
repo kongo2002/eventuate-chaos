@@ -8,10 +8,15 @@ import sys
 import blockade.cli
 import interact
 
+
 HOST = '127.0.0.1'
 MAX_VALUE = 100
 
+
 def check_counters(nodes):
+    if len(nodes) < 1:
+        raise ValueError('no nodes given')
+
     counters = []
     for node, port in nodes.items():
         counter = interact.request(HOST, port, 'get')
@@ -20,20 +25,36 @@ def check_counters(nodes):
         if not equal:
             print('Counter of node "%s" [%d] does not match with other counters: %s' %
                   (node, port, str(counters)))
-            return False
+            return None
         counters.append(counter)
-    return True
+
+    # all counters are the same -> return the first one for reference
+    return int(counters[0])
+
+
+class CounterOperation(interact.Operation):
+
+    def init(self, host, nodes):
+        # get first counter value
+        counter = int(interact.request(host, nodes.values()[0], 'get'))
+        return {'counter': counter}
+
+    def operation(self, idx, state):
+        op = random.choice(['inc', 'dec'])
+        value = random.randint(1, MAX_VALUE)
+
+        if op == 'inc':
+            state['counter'] += value
+        else:
+            state['counter'] -= value
+
+        return '%s %d' % (op, value)
 
 
 def start_worker(nodes, interval):
-    def random_op():
-        op = random.choice(['inc', 'dec'])
-        value = random.randint(1, MAX_VALUE)
-        return '%s %d' % (op, value)
-
     print('Starting requests...')
 
-    worker = interact.SetWorker(HOST, nodes, random_op, interval=interval)
+    worker = interact.RequestWorker(HOST, nodes, CounterOperation(), interval=interval)
     worker.start()
 
     return worker
@@ -60,9 +81,9 @@ if __name__ == '__main__':
     for node in NODES.keys():
         print('  ' + node)
 
+    # wait for system to be ready and initialized
     interact.wait_to_be_running(HOST, NODES)
-
-    if not check_counters(NODES):
+    if check_counters(NODES) is None:
         sys.exit(1)
 
     WORKER = start_worker(NODES, ARGS.interval)
@@ -91,8 +112,16 @@ if __name__ == '__main__':
 
     time.sleep(SETTLE_TIMEOUT)
 
-    if not check_counters(NODES):
+    print('Processed %d requests in the meantime' % WORKER.iterations)
+
+    EXPECTED_VALUE = WORKER.state['counter']
+    COUNTER_VALUE = check_counters(NODES)
+    if COUNTER_VALUE is None:
         sys.exit(1)
 
-    print('counter values match up correctly')
+    if COUNTER_VALUE != EXPECTED_VALUE:
+        print('Expected counter value: %d; actual %d' % (EXPECTED_VALUE, COUNTER_VALUE))
+        sys.exit(1)
+
+    print('Counter value (%d) matches up correctly' % EXPECTED_VALUE)
 
