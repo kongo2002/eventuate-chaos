@@ -13,7 +13,8 @@ trait ChaosSetup extends App {
        |akka.remote.netty.tcp.port = 2552
        |akka.test.single-expect-default = 10s
        |akka.loglevel = "ERROR"
-       |eventuate.log.replication.batch-size-max = 128
+       |eventuate.log.batching.batch-size-limit = 16
+       |eventuate.log.replication.batch-size-max = 16
        |akka.remote.netty.tcp.maximum-frame-size = 1024000b
      """.stripMargin)
 

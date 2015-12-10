@@ -70,9 +70,9 @@ if __name__ == '__main__':
     ARGS = PARSER.parse_args()
 
     # we are making some assumptions in here:
-    # every location is named 'location-<id>' and its TCP port 8080
+    # every location is named 'location<id>' and its TCP port 8080
     # is mapped to the host port '10000+<id>'
-    NODES = dict(('location-%d' % idx, 10000+idx) for idx in xrange(1, ARGS.locations+1))
+    NODES = dict(('location%d' % idx, 10000+idx) for idx in xrange(1, ARGS.locations+1))
     OP = CounterOperation()
 
     if not interact.requests_with_chaos(OP, HOST, NODES, ARGS.iterations, ARGS.interval, SETTLE_TIMEOUT):
@@ -83,6 +83,8 @@ if __name__ == '__main__':
 
     if COUNTER_VALUE is None:
         sys.exit(1)
+    else:
+        print('All %d nodes converged to the counter value: %d' % (len(NODES), COUNTER_VALUE))
 
     if COUNTER_VALUE != EXPECTED_VALUE:
         print('Expected counter value: %d; actual %d' % (EXPECTED_VALUE, COUNTER_VALUE))

@@ -12,6 +12,8 @@ trait ChaosCassandraSetup extends ChaosSetup {
     s"""
        |eventuate.log.cassandra.contact-points = [${seeds.map(quote).mkString(",")}]
        |eventuate.log.cassandra.replication-factor = ${seeds.size}
+       |eventuate.log.cassandra.keyspace = "ev_$name"
+       |eventuate.log.cassandra.index-update-limit = 16
      """.stripMargin))
 
   def cassandras = sys.env.get("CASSANDRA_NODES").map(_.split(","))
