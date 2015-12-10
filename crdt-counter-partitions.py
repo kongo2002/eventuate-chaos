@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import argparse
 import random
-import time
 import sys
 
 import blockade.cli
@@ -34,10 +35,15 @@ def check_counters(nodes):
 
 class CounterOperation(interact.Operation):
 
+    def __init__(self):
+        self.state = {'counter': 0}
+
     def init(self, host, nodes):
         # get first counter value
         counter = int(interact.request(host, nodes.values()[0], 'get'))
-        return {'counter': counter}
+        self.state['counter'] = counter
+
+        return self.state
 
     def operation(self, idx, state):
         op = random.choice(['inc', 'dec'])
@@ -50,22 +56,8 @@ class CounterOperation(interact.Operation):
 
         return '%s %d' % (op, value)
 
-
-def start_worker(nodes, interval):
-    print('Starting requests...')
-
-    worker = interact.RequestWorker(HOST, nodes, CounterOperation(), interval=interval)
-    worker.start()
-
-    return worker
-
-
-def _print_partitions(partitions):
-    if len(partitions) < 1:
-        print('Cluster joined')
-    else:
-        for idx, part in enumerate(partitions):
-            print('Partition %d: %s' % (idx+1, ', '.join(part)))
+    def get_counter(self):
+        return self.state['counter']
 
 
 if __name__ == '__main__':
@@ -81,60 +73,14 @@ if __name__ == '__main__':
     # every location is named 'location-<id>' and its TCP port 8080
     # is mapped to the host port '10000+<id>'
     NODES = dict(('location-%d' % idx, 10000+idx) for idx in xrange(1, ARGS.locations+1))
+    OP = CounterOperation()
 
-    print('Chaos iterations: %d' % ARGS.iterations)
-    print('Request interval: %.3f sec' % ARGS.interval)
-
-    print('Nodes:')
-    for node in NODES.keys():
-        print('  ' + node)
-
-    # wait for system to be ready and initialized
-    interact.wait_to_be_running(HOST, NODES)
-    if check_counters(NODES) is None:
+    if not interact.requests_with_chaos(OP, HOST, NODES, ARGS.iterations, ARGS.interval, SETTLE_TIMEOUT):
         sys.exit(1)
 
-    try:
-        WORKER = start_worker(NODES, ARGS.interval)
-
-        # trigger some random partitions
-        CFG = blockade.cli.load_config('blockade.yml')
-        BLK = blockade.cli.get_blockade(CFG)
-
-        def random_network(node):
-            failure = random.choice([BLK.fast, BLK.flaky, BLK.slow])
-            failure([node], None)
-
-        for idx in xrange(ARGS.iterations):
-            part = BLK.random_partition()
-            _print_partitions(part)
-            print('-' * 25)
-            time.sleep(5)
-
-            random_network(random.choice(NODES.keys()))
-            time.sleep(5)
-    except (KeyboardInterrupt, blockade.errors.BlockadeError):
-        WORKER.cancel()
-        WORKER.join()
-        BLK.join()
-        BLK.fast(None, None)
-
-        print('Test interrupted')
-        sys.exit(1)
-
-    WORKER.cancel()
-    WORKER.join()
-
-    print('Joining cluster - waiting %d seconds to settle...' % SETTLE_TIMEOUT)
-    BLK.join()
-    BLK.fast(None, None)
-
-    time.sleep(SETTLE_TIMEOUT)
-
-    print('Processed %d requests in the meantime' % WORKER.iterations)
-
-    EXPECTED_VALUE = WORKER.state['counter']
+    EXPECTED_VALUE = OP.get_counter()
     COUNTER_VALUE = check_counters(NODES)
+
     if COUNTER_VALUE is None:
         sys.exit(1)
 

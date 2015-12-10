@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import argparse
 import socket
 import sys
@@ -7,8 +9,12 @@ import time
 import threading
 import random
 
+import blockade.cli
+
 
 BUFFER_SIZE = 64
+SETTLE_TIMEOUT = 60
+FAILURE_INTERVAL = 5
 
 
 class Operation(object):
@@ -101,6 +107,70 @@ def wait_to_be_running(host, nodes):
         if all_running:
             return True
         time.sleep(2)
+
+
+def _print_partitions(partitions):
+    if len(partitions) < 1:
+        print('Cluster joined')
+    else:
+        for idx, part in enumerate(partitions):
+            print('Partition %d: %s' % (idx+1, ', '.join(part)))
+
+
+def requests_with_chaos(operation, host, nodes, iterations, interval, settle=SETTLE_TIMEOUT, failure_interval=FAILURE_INTERVAL):
+    print('Chaos iterations: %d' % iterations)
+    print('Request interval: %.3f sec' % interval)
+
+    print('Nodes:')
+    for node in nodes.keys():
+        print('  ' + node)
+
+    # wait for system to be ready and initialized
+    wait_to_be_running(host, nodes)
+
+    try:
+        worker = RequestWorker(host, nodes, operation, interval=interval)
+        worker.start()
+
+        # trigger some random partitions
+        cfg = blockade.cli.load_config('blockade.yml')
+        blk = blockade.cli.get_blockade(cfg)
+
+        def random_network(node):
+            failure = random.choice([blk.fast, blk.flaky, blk.slow])
+            failure([node], None)
+
+        for _ in xrange(iterations):
+            part = blk.random_partition()
+            _print_partitions(part)
+            print('-' * 25)
+            time.sleep(failure_interval)
+
+            random_network(random.choice(nodes.keys()))
+            time.sleep(failure_interval)
+    except (KeyboardInterrupt, blockade.errors.BlockadeError) as err:
+        worker.cancel()
+        worker.join()
+
+        if err is KeyboardInterrupt:
+            blk.join()
+            blk.fast(None, None)
+            print('Test interrupted')
+            return False
+        else:
+            raise
+
+    worker.cancel()
+    worker.join()
+
+    print('Joining cluster - waiting %d seconds to settle...' % settle)
+    blk.join()
+    blk.fast(None, None)
+
+    time.sleep(settle)
+
+    print('Processed %d requests in the meantime' % worker.iterations)
+    return True
 
 
 if __name__ == '__main__':
