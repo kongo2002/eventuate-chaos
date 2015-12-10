@@ -59,18 +59,33 @@ Just to give you another example on how you might automate your chaos testing yo
 application:
 
 ``` bash
-scenarios/counter $ sudo ../../crdt-counter-partitions.py
-Chaos iterations: 30
-Request interval: 0.100 sec
+scenarios/counter $ sudo ../../crdt-counter-partitions.py -i 5 --interval 0.001
+Chaos iterations: 5
+Request interval: 0.001 sec
 Nodes:
   location-1
   location-2
   location-3
 Waiting for 3 nodes to be up and running...
 Starting requests...
+Partition 1: location-1
+Partition 2: location-3
+Partition 3: location-2
+--------------------
+Cluster joined
+--------------------
+Partition 1: location-3
+Partition 2: location-1
+Partition 3: location-2
+--------------------
+Cluster joined
+--------------------
+Partition 1: location-3
+Partition 2: location-2, location-1
+--------------------
 Joining cluster - waiting 30 seconds to settle...
-Processed 659 requests in the meantime
-Counter value (471) matches up correctly
+Processed 6631 requests in the meantime
+Counter value (9037) matches up correctly
 ```
 
 The expected and tested behavior is to end up with all Eventuate nodes responding with the same counter value after the

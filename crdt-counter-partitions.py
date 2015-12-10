@@ -60,6 +60,14 @@ def start_worker(nodes, interval):
     return worker
 
 
+def _print_partitions(partitions):
+    if len(partitions) < 1:
+        print('Cluster joined')
+    else:
+        for idx, part in enumerate(partitions):
+            print('Partition %d: %s' % (idx+1, ', '.join(part)))
+
+
 if __name__ == '__main__':
     SETTLE_TIMEOUT = 30
     PARSER = argparse.ArgumentParser(description='start CRDT-counter chaos test')
@@ -98,7 +106,9 @@ if __name__ == '__main__':
             failure([node], None)
 
         for idx in xrange(ARGS.iterations):
-            BLK.random_partition()
+            part = BLK.random_partition()
+            _print_partitions(part)
+            print('-' * 25)
             time.sleep(5)
 
             random_network(random.choice(NODES.keys()))
