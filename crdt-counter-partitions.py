@@ -86,22 +86,31 @@ if __name__ == '__main__':
     if check_counters(NODES) is None:
         sys.exit(1)
 
-    WORKER = start_worker(NODES, ARGS.interval)
+    try:
+        WORKER = start_worker(NODES, ARGS.interval)
 
-    # trigger some random partitions
-    CFG = blockade.cli.load_config('blockade.yml')
-    BLK = blockade.cli.get_blockade(CFG)
+        # trigger some random partitions
+        CFG = blockade.cli.load_config('blockade.yml')
+        BLK = blockade.cli.get_blockade(CFG)
 
-    def random_network(node):
-        failure = random.choice([BLK.fast, BLK.flaky, BLK.slow])
-        failure([node], None)
+        def random_network(node):
+            failure = random.choice([BLK.fast, BLK.flaky, BLK.slow])
+            failure([node], None)
 
-    for idx in xrange(ARGS.iterations):
-        BLK.random_partition()
-        time.sleep(5)
+        for idx in xrange(ARGS.iterations):
+            BLK.random_partition()
+            time.sleep(5)
 
-        random_network(random.choice(NODES.keys()))
-        time.sleep(5)
+            random_network(random.choice(NODES.keys()))
+            time.sleep(5)
+    except (KeyboardInterrupt, blockade.errors.BlockadeError):
+        WORKER.cancel()
+        WORKER.join()
+        BLK.join()
+        BLK.fast(None, None)
+
+        print('Test interrupted')
+        sys.exit(1)
 
     WORKER.cancel()
     WORKER.join()

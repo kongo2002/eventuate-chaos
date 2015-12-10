@@ -2,6 +2,7 @@
 
 import time
 import random
+import sys
 
 import blockade.cli
 import interact
@@ -33,22 +34,31 @@ if __name__ == '__main__':
 
     print('Starting requests...')
 
-    # start worker that randomly trigger 'add' and 'remove' commands
-    WORKER = interact.RequestWorker(HOST, NODES, SetOperation())
-    WORKER.start()
+    try:
+        # start worker that randomly trigger 'add' and 'remove' commands
+        WORKER = interact.RequestWorker(HOST, NODES, SetOperation())
+        WORKER.start()
 
-    # trigger some random partitions
-    CFG = blockade.cli.load_config('blockade.yml')
-    BLK = blockade.cli.get_blockade(CFG)
+        # trigger some random partitions
+        CFG = blockade.cli.load_config('blockade.yml')
+        BLK = blockade.cli.get_blockade(CFG)
 
-    for idx in xrange(6):
-        # partition a random chaos node
-        node = random.choice(NODES.keys())
-        print('Partition of "%s"' % node)
+        for idx in xrange(6):
+            # partition a random chaos node
+            node = random.choice(NODES.keys())
+            print('Partition of "%s"' % node)
 
-        BLK.partition([[node]])
-        time.sleep(10)
+            BLK.partition([[node]])
+            time.sleep(10)
+    except (KeyboardInterrupt, blockade.errors.BlockadeError):
+        WORKER.cancel()
+        WORKER.join()
+        BLK.join()
 
+        print('Test interrupted')
+        sys.exit(1)
+
+    WORKER.cancel()
     WORKER.join()
 
     print('Joining cluster - waiting %d seconds to settle...' % SETTLE_TIMEOUT)
