@@ -25,7 +25,7 @@ def check_counters(nodes):
 
         if not equal:
             print('Counter of node "%s" [%d] does not match with other counters: %s' %
-                  (node, port, str(counters)))
+                  (node, counter, str(counters)))
             return None
         counters.append(counter)
 
