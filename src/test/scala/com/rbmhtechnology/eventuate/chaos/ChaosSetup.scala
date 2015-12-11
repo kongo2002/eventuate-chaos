@@ -1,9 +1,15 @@
 package com.rbmhtechnology.eventuate.chaos
 
+import akka.actor.ActorSystem
 import com.rbmhtechnology.eventuate.ReplicationConnection
+import com.rbmhtechnology.eventuate.ReplicationEndpoint
 import com.typesafe.config.ConfigFactory
 
 trait ChaosSetup extends App {
+
+  def getSystem: ActorSystem
+
+  def getEndpoint(implicit system: ActorSystem): ReplicationEndpoint
 
   protected def baseConfig(hostname: String) = ConfigFactory.parseString(
     s"""

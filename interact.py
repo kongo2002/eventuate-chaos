@@ -14,7 +14,7 @@ import blockade.cli
 
 BUFFER_SIZE = 64
 SETTLE_TIMEOUT = 60
-FAILURE_INTERVAL = 5
+FAILURE_DELAY = 5
 
 
 class Operation(object):
@@ -117,9 +117,10 @@ def _print_partitions(partitions):
             print('Partition %d: %s' % (idx+1, ', '.join(part)))
 
 
-def requests_with_chaos(operation, host, nodes, iterations, interval, settle=SETTLE_TIMEOUT, failure_interval=FAILURE_INTERVAL):
+def requests_with_chaos(operation, host, nodes, iterations, interval, settle=SETTLE_TIMEOUT, failure_delay=FAILURE_DELAY):
     print('Chaos iterations: %d' % iterations)
     print('Request interval: %.3f sec' % interval)
+    print('Failure delay: %d sec' % failure_delay)
 
     print('Nodes:')
     for node in nodes.keys():
@@ -132,7 +133,7 @@ def requests_with_chaos(operation, host, nodes, iterations, interval, settle=SET
         worker = RequestWorker(host, nodes, operation, interval=interval)
         worker.start()
 
-        # trigger some random partitions
+        # initialize blockade interface
         cfg = blockade.cli.load_config('blockade.yml')
         blk = blockade.cli.get_blockade(cfg)
 
@@ -140,14 +141,19 @@ def requests_with_chaos(operation, host, nodes, iterations, interval, settle=SET
             failure = random.choice([blk.fast, blk.flaky, blk.slow])
             failure([node], None)
 
+        delay = failure_delay / 2
+
         for _ in xrange(iterations):
+            # trigger some random partition(s)
             part = blk.random_partition()
             _print_partitions(part)
             print('-' * 25)
-            time.sleep(failure_interval)
+            time.sleep(delay)
 
+            # trigger random network failure (slow, flaky...)
             random_network(random.choice(nodes.keys()))
-            time.sleep(failure_interval)
+            time.sleep(delay)
+
     except (KeyboardInterrupt, blockade.errors.BlockadeError) as err:
         worker.cancel()
         worker.join()

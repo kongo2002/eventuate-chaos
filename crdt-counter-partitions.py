@@ -24,7 +24,7 @@ def check_counters(nodes):
         equal = all(x == counter for x in counters)
 
         if not equal:
-            print('Counter of node "%s" [%d] does not match with other counters: %s' %
+            print('Counter of node "%s" [%s] does not match with other counters: %s' %
                   (node, counter, str(counters)))
             return None
         counters.append(counter)
@@ -66,16 +66,17 @@ if __name__ == '__main__':
     PARSER.add_argument('-i', '--iterations', type=int, default=30)
     PARSER.add_argument('--interval', type=float, default=0.1)
     PARSER.add_argument('-l', '--locations', type=int, default=3)
+    PARSER.add_argument('-d', '--delay', type=int, default=10)
 
     ARGS = PARSER.parse_args()
 
     # we are making some assumptions in here:
-    # every location is named 'location<id>' and its TCP port 8080
+    # every location is named 'location<id>' and its TCP port (8080)
     # is mapped to the host port '10000+<id>'
     NODES = dict(('location%d' % idx, 10000+idx) for idx in xrange(1, ARGS.locations+1))
     OP = CounterOperation()
 
-    if not interact.requests_with_chaos(OP, HOST, NODES, ARGS.iterations, ARGS.interval, SETTLE_TIMEOUT):
+    if not interact.requests_with_chaos(OP, HOST, NODES, ARGS.iterations, ARGS.interval, SETTLE_TIMEOUT, ARGS.delay):
         sys.exit(1)
 
     EXPECTED_VALUE = OP.get_counter()

@@ -3,12 +3,13 @@ package com.rbmhtechnology.eventuate.chaos
 import java.net.InetSocketAddress
 
 import akka.actor.Actor
+import akka.actor.ActorLogging
 import akka.actor.ActorRef
 import akka.io.IO
 import akka.io.Tcp
 import akka.util.ByteString
 
-abstract class ChaosInterface extends Actor {
+abstract class ChaosInterface extends Actor with ActorLogging {
   val port = 8080
   val endpoint = new InetSocketAddress(port)
   val command = """(?s)(\w+)\s+(\d+).*""".r
