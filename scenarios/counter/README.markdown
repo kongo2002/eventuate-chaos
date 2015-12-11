@@ -1,5 +1,5 @@
 
-# Chaos test of distributed CRDT-based counter application
+# Chaos test of distributed operation-based Counter CRDT
 
 This scenario is another example of an [Eventuate][eventuate] application that is being tested under network failures
 and partitions.
@@ -10,13 +10,18 @@ and partitions.
 
 ## Test setup
 
-This time the application is a [CRDT-based
-counter](https://github.com/RBMHTechnology/eventuate/blob/master/src/main/scala/com/rbmhtechnology/eventuate/crdt/Counter.scala)
-service that is distributed among three Eventuate nodes. The persistence of the event-sourced services is driven by
-[LevelDB event logs](http://rbmhtechnology.github.io/eventuate/reference/event-log.html#leveldb-storage-backend).
+This time the application is a [operation-based Counter
+CRDT](https://github.com/RBMHTechnology/eventuate/blob/master/src/main/scala/com/rbmhtechnology/eventuate/crdt/Counter.scala)
+service that is distributed among three Eventuate locations (each represented by
+a separate node). The persistence of the event-sourced services is driven by
+[LevelDB event
+logs](http://rbmhtechnology.github.io/eventuate/reference/event-log.html#leveldb-storage-backend).
 
 
 #### Participating nodes
+
+Each Eventuate location accepts control commands on its local TCP port `8080` that is exposed to the host machine on the
+following ports:
 
 - `location-1`: TCP port `8080` -> host port `10001`
 - `location-2`: TCP port `8080` -> host port `10002`
@@ -25,7 +30,7 @@ service that is distributed among three Eventuate nodes. The persistence of the 
 
 #### Scenario
 
-The distributed counter value that is managed by the tested application can be incremented and decremented by issuing a
+The distributed counter CRDT that is managed by the tested application can be incremented and decremented by issuing a
 simple command via the TCP port of the respective node.
 
 - `inc 15`: increment the counter by `15`
@@ -72,7 +77,8 @@ Partition 1: location-1
 Partition 2: location-3
 Partition 3: location-2
 --------------------
-Cluster joined
+Partition 1: location-3, location-1
+Partition 2: location-2
 --------------------
 Partition 1: location-3
 Partition 2: location-1
@@ -94,10 +100,10 @@ are supposed to converge to the same correct value. Moreover the actual counter 
 expected by calculating all requests that are made during the test. Of course this value won't match up in case you
 issue commands by yourself during the test setup.
 
-The default settings of the test script are to inject 30 partitions on the network every 10 seconds and moreover
-toggling one random node's network to being *slow* or *flaky* (more information on [blockade][blockade]) separated by 5
-seconds each. In the meantime every 0.1 seconds a request for either a *decrement* or *increment* operation is triggered
-towards one random Eventuate node.
+The default settings of the test script are to inject random partitions on the network every 10 seconds and moreover
+toggling one random node's network to being *slow*, *flaky* or *fast* (more information on [blockade][blockade])
+separated by 5 seconds each. These failures are injected on 30 iterations by default. In the meantime every 0.1 seconds
+a request for either a *decrement* or *increment* operation is triggered towards one random Eventuate node.
 
 Some parameters like request interval (`--interval`), number of network failures to inject (`--iterations`) and the
 number of participating Eventuate nodes (`--locations`) may be configured at the command line as well.
