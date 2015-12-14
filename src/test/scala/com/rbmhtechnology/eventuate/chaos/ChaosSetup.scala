@@ -21,6 +21,8 @@ trait ChaosSetup extends App {
        |akka.loglevel = "ERROR"
        |eventuate.log.batching.batch-size-limit = 16
        |eventuate.log.replication.batch-size-max = 16
+       |eventuate.log.replication.read-timeout = 3s
+       |eventuate.log.replication.retry-delay = 3s
        |akka.remote.netty.tcp.maximum-frame-size = 1024000b
      """.stripMargin)
 

@@ -14,6 +14,8 @@ trait ChaosCassandraSetup extends ChaosSetup {
        |eventuate.log.cassandra.replication-factor = ${seeds.size}
        |eventuate.log.cassandra.keyspace = "ev_$name"
        |eventuate.log.cassandra.index-update-limit = 16
+       |eventuate.log.cassandra.read-consistency = "QUORUM"
+       |eventuate.log.cassandra.write-consistency = "QUORUM"
      """.stripMargin))
 
   def cassandras = sys.env.get("CASSANDRA_NODES").map(_.split(","))
